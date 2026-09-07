@@ -20,6 +20,7 @@ import {
   X,
   Users,
   Send,
+  LayoutGrid,
 } from "lucide-react";
 import { getPreferencesClient, setPreferencesClient } from "@/lib/cookies";
 
@@ -56,8 +57,8 @@ const TAG_COLORS: Record<string, string> = {
 };
 
 interface SidebarProps {
-  activeTab: "inbox" | "briefing" | "summary" | "calendar-tasks" | "privacy" | "settings";
-  setActiveTab: (tab: "inbox" | "briefing" | "summary" | "calendar-tasks" | "privacy" | "settings") => void;
+  activeTab: "inbox" | "briefing" | "priority-grid" | "summary" | "calendar-tasks" | "privacy" | "settings";
+  setActiveTab: (tab: "inbox" | "briefing" | "priority-grid" | "summary" | "calendar-tasks" | "privacy" | "settings") => void;
   briefingCount: number;
   inboxCount: number;
   accounts: ConnectedAccountData[];
@@ -347,6 +348,33 @@ export default function Sidebar({
                   {briefingCount}
                 </span>
               )}
+            </button>
+
+            {/* Urgency & Deadline Grid Nav Link */}
+            <button
+              onClick={() => {
+                setActiveTab("priority-grid");
+                setIsMobileOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === "priority-grid"
+                  ? "bg-accent text-white shadow-sm font-bold"
+                  : "text-muted hover:text-foreground hover:bg-surface-elevated"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <LayoutGrid className="w-4 h-4" />
+                <span>Urgency Grid</span>
+              </div>
+              <span
+                className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
+                  activeTab === "priority-grid"
+                    ? "bg-white/20 text-white"
+                    : "bg-red-500/15 text-red-500 dark:text-red-400"
+                }`}
+              >
+                Tiles
+              </span>
             </button>
 
             {/* AI Summary View Nav Link */}

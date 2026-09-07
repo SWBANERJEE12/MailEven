@@ -7,6 +7,7 @@ import Sidebar, { ConnectedAccountData } from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import InboxView from "@/components/InboxView";
 import DailyBriefingView from "@/components/DailyBriefingView";
+import PriorityTilesView from "@/components/PriorityTilesView";
 import AiSummaryView from "@/components/AiSummaryView";
 import CalendarTasksView from "@/components/CalendarTasksView";
 import PrivacyPanel from "@/components/PrivacyPanel";
@@ -23,7 +24,7 @@ export default function Home() {
   const { data: session, status } = useSession();
 
   const [activeTab, setActiveTab] = useState<
-    "inbox" | "briefing" | "summary" | "calendar-tasks" | "privacy" | "settings"
+    "inbox" | "briefing" | "priority-grid" | "summary" | "calendar-tasks" | "privacy" | "settings"
   >("inbox");
 
   const [accounts, setAccounts] = useState<ConnectedAccountData[]>([]);
@@ -357,6 +358,16 @@ export default function Home() {
               onOpenActionModal={handleOpenActionModal}
               onRefreshData={refreshAll}
               onNavigateToSummary={() => setActiveTab("summary")}
+            />
+          )}
+
+          {activeTab === "priority-grid" && (
+            <PriorityTilesView
+              emails={emails}
+              onOpenEmail={(em) => setSelectedEmailModal(em)}
+              onScheduleEvent={(em) => handleOpenActionModal(em, "event")}
+              onAddTask={(em) => handleOpenActionModal(em, "task")}
+              onReply={handleReplyEmail}
             />
           )}
 
