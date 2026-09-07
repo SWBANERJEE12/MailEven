@@ -10,6 +10,7 @@ import {
   Search,
   Database,
   CheckCircle2,
+  Send,
 } from "lucide-react";
 
 interface NavbarProps {
@@ -20,6 +21,7 @@ interface NavbarProps {
   setSearchQuery: (q: string) => void;
   onSelectEmail?: (id: string) => void;
   onRefreshData?: () => void;
+  onCompose?: () => void;
 }
 
 export default function Navbar({
@@ -30,6 +32,7 @@ export default function Navbar({
   setSearchQuery,
   onSelectEmail,
   onRefreshData,
+  onCompose,
 }: NavbarProps) {
   const { data: session } = useSession();
   const [showSeedMenu, setShowSeedMenu] = useState(false);
@@ -124,6 +127,18 @@ export default function Navbar({
               </div>
             )}
           </div>
+
+          {/* Quick Compose Button */}
+          {onCompose && (
+            <button
+              onClick={onCompose}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white rounded-xl text-xs font-bold hover:opacity-90 shadow-sm transition-all"
+              title="Compose new email"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">New Email</span>
+            </button>
+          )}
 
           {/* Sync Button */}
           <button

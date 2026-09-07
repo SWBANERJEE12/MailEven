@@ -19,6 +19,7 @@ import {
   Tag as TagIcon,
   X,
   Users,
+  Send,
 } from "lucide-react";
 import { getPreferencesClient, setPreferencesClient } from "@/lib/cookies";
 
@@ -67,6 +68,7 @@ interface SidebarProps {
   isMobileOpen: boolean;
   setIsMobileOpen: (open: boolean) => void;
   onAddAccount: () => void;
+  onCompose: () => void;
 }
 
 export default function Sidebar({
@@ -82,6 +84,7 @@ export default function Sidebar({
   isMobileOpen,
   setIsMobileOpen,
   onAddAccount,
+  onCompose,
 }: SidebarProps) {
   const { data: session } = useSession();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -272,6 +275,20 @@ export default function Sidebar({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Compose / Send Email Action Button */}
+          <div className="px-3 pt-3 pb-1">
+            <button
+              onClick={() => {
+                setIsMobileOpen(false);
+                onCompose();
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-accent text-white hover:opacity-90 active:scale-[0.98] transition-all text-xs font-bold shadow-md"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>New Email</span>
+            </button>
           </div>
 
           {/* Navigation Links */}

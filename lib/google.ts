@@ -245,3 +245,78 @@ export async function revokeGoogleToken(token: string): Promise<boolean> {
     return false;
   }
 }
+
+export interface SendGmailMessageOptions {
+  to: string;
+  subject: string;
+  bodyText: string;
+  bodyHtml?: string;
+  cc?: string;
+  bcc?: string;
+  inReplyTo?: string;
+  references?: string;
+  threadId?: string;
+}
+
+/**
+ * Sends an email using the Gmail API users.messages.send endpoint with RFC 2822 formatting.
+ */
+export async function sendGmailMessage(
+  accessToken: string,
+  refreshToken: string | undefined,
+  options: SendGmailMessageOptions
+): Promise<{ id: string; threadId: string }> {
+  const auth = getGoogleOAuthClient(accessToken, refreshToken);
+  const gmail = google.gmail({ version: "v1", auth });
+
+  const { to, subject, bodyText, bodyHtml, cc, bcc, inReplyTo, references, threadId } = options;
+
+  const boundary = `__MailEven_Boundary_${Date.now()}_${Math.random().toString(36).slice(2)}__`;
+  const utf8Subject = `=?utf-8?B?${Buffer.from(subject || "(No Subject)").toString("base64")}?=`;
+
+  const headers: (string | null)[] = [
+    `To: ${to}`,
+    cc ? `Cc: ${cc}` : null,
+    bcc ? `Bcc: ${bcc}` : null,
+    `Subject: ${utf8Subject}`,
+    inReplyTo ? `In-Reply-To: ${inReplyTo}` : null,
+    references ? `References: ${references}` : null,
+    "MIME-Version: 1.0",
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    "",
+    `--${boundary}`,
+    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Transfer-Encoding: 7bit",
+    "",
+    bodyText || "",
+    "",
+    `--${boundary}`,
+    "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: 7bit",
+    "",
+    bodyHtml || (bodyText ? bodyText.replace(/\n/g, "<br>") : "<p></p>"),
+    "",
+    `--${boundary}--`,
+  ];
+
+  const rawMessage = headers.filter((h) => h !== null).join("\r\n");
+  const encodedMessage = Buffer.from(rawMessage)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  const res = await gmail.users.messages.send({
+    userId: "me",
+    requestBody: {
+      raw: encodedMessage,
+      threadId: threadId || undefined,
+    },
+  });
+
+  return {
+    id: res.data.id || "",
+    threadId: res.data.threadId || "",
+  };
+}
+

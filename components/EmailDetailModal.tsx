@@ -11,6 +11,7 @@ import {
   Mail,
   CheckCircle2,
   ShieldAlert,
+  Reply,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -50,12 +51,14 @@ interface EmailDetailModalProps {
   email: EmailData | null;
   onClose: () => void;
   onActionComplete?: () => void;
+  onReply?: (email: EmailData) => void;
 }
 
 export default function EmailDetailModal({
   email,
   onClose,
   onActionComplete,
+  onReply,
 }: EmailDetailModalProps) {
   const [activeTab, setActiveTab] = useState<"text" | "html">("text");
   const [isScheduling, setIsScheduling] = useState(false);
@@ -303,16 +306,30 @@ export default function EmailDetailModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-surface-elevated border-t border-surface-border flex items-center justify-between">
-          <span className="text-xs text-muted">
+        <div className="p-4 bg-surface-elevated border-t border-surface-border flex items-center justify-between gap-3">
+          <span className="text-xs text-muted truncate">
             Recipient: {email.recipient}
           </span>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-card hover:bg-surface-highlight text-foreground text-xs font-semibold rounded-xl transition-colors border border-surface-borderSubtle"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-2">
+            {onReply && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onReply(email);
+                }}
+                className="px-4 py-2 bg-accent text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:opacity-90 flex items-center gap-1.5"
+              >
+                <Reply className="w-3.5 h-3.5" />
+                <span>Reply</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-surface-card hover:bg-surface-highlight text-foreground text-xs font-semibold rounded-xl transition-colors border border-surface-borderSubtle"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

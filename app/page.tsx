@@ -13,6 +13,7 @@ import PrivacyPanel from "@/components/PrivacyPanel";
 import SettingsView from "@/components/SettingsView";
 import EmailDetailModal, { EmailData } from "@/components/EmailDetailModal";
 import ActionModal from "@/components/ActionModal";
+import ComposeEmailModal, { ComposeInitialData } from "@/components/ComposeEmailModal";
 import CookieNotice from "@/components/CookieNotice";
 import MailEvenLogo from "@/components/MailEvenLogo";
 import { getPreferencesClient } from "@/lib/cookies";
@@ -28,7 +29,7 @@ export default function Home() {
   const [accounts, setAccounts] = useState<ConnectedAccountData[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
   const [selectedTag, setSelectedTag] = useState("All");
-  const [statusFilter, setStatusFilter] = useState<"inbox" | "archived">("inbox");
+  const [statusFilter, setStatusFilter] = useState<"inbox" | "sent" | "archived">("inbox");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -37,6 +38,10 @@ export default function Home() {
   const [briefingItems, setBriefingItems] = useState<EmailData[]>([]);
   const [selectedEmailModal, setSelectedEmailModal] = useState<EmailData | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; link?: string } | null>(null);
+
+  // Compose Email Modal State
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [composeInitialData, setComposeInitialData] = useState<ComposeInitialData | null>(null);
 
   // Action Modal State
   const [actionModalState, setActionModalState] = useState<{
@@ -225,6 +230,28 @@ export default function Home() {
     });
   };
 
+  const handleOpenCompose = (data?: ComposeInitialData) => {
+    setComposeInitialData(data || null);
+    setIsComposeOpen(true);
+  };
+
+  const handleReplyEmail = (email: EmailData) => {
+    const cleanSubject = email.subject.startsWith("Re:") ? email.subject : `Re: ${email.subject}`;
+    const formattedDate = new Date(email.receivedAt).toLocaleString();
+    const quotedBody = `\n\n\n--- On ${formattedDate}, ${email.senderName || email.sender} wrote ---\n> ${
+      (email.bodyText || email.snippet || "").split("\n").join("\n> ")
+    }`;
+
+    handleOpenCompose({
+      to: email.sender,
+      subject: cleanSubject,
+      body: quotedBody,
+      inReplyTo: (email as any).googleMessageId || undefined,
+      threadId: (email as any).threadId || undefined,
+      fromAccountId: (email as any).connectedAccountId || undefined,
+    });
+  };
+
   const handleSelectEmailById = async (id: string) => {
     try {
       const res = await fetch(`/api/emails/${id}`);
@@ -268,6 +295,7 @@ export default function Home() {
         isMobileOpen={isMobileSidebarOpen}
         setIsMobileOpen={setIsMobileSidebarOpen}
         onAddAccount={handleAddAccount}
+        onCompose={() => handleOpenCompose()}
       />
 
       {/* Main Content Area (Offset by Sidebar on Desktop) */}
@@ -281,6 +309,7 @@ export default function Home() {
           setSearchQuery={setSearchQuery}
           onSelectEmail={handleSelectEmailById}
           onRefreshData={refreshAll}
+          onCompose={() => handleOpenCompose()}
         />
 
         {/* Global Toast Notification */}
@@ -365,6 +394,22 @@ export default function Home() {
         email={selectedEmailModal}
         onClose={() => setSelectedEmailModal(null)}
         onActionComplete={refreshAll}
+        onReply={handleReplyEmail}
+      />
+
+      <ComposeEmailModal
+        isOpen={isComposeOpen}
+        onClose={() => {
+          setIsComposeOpen(false);
+          setComposeInitialData(null);
+        }}
+        onSuccess={(msg) => {
+          showToast(msg);
+          refreshAll();
+        }}
+        accounts={accounts}
+        defaultAccountId={selectedAccountId}
+        initialData={composeInitialData}
       />
 
       <ActionModal

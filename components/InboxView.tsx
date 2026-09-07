@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Inbox,
   User,
+  Send,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { EmailData } from "./EmailDetailModal";
@@ -19,8 +20,8 @@ interface InboxViewProps {
   emails: EmailData[];
   selectedTag: string;
   setSelectedTag: (t: string) => void;
-  statusFilter: "inbox" | "archived";
-  setStatusFilter: (s: "inbox" | "archived") => void;
+  statusFilter: "inbox" | "sent" | "archived";
+  setStatusFilter: (s: "inbox" | "sent" | "archived") => void;
   onOpenEmail: (email: EmailData) => void;
   onArchiveToggle: (emailId: string, currentStatus: string) => Promise<void>;
   onScheduleEvent: (email: EmailData) => void;
@@ -39,12 +40,16 @@ export default function InboxView({
 }: InboxViewProps) {
   return (
     <div className="space-y-4">
-      {/* Top Controls: Active Filter Notice & Status Toggle (Tag filter moved to sidebar) */}
+      {/* Top Controls: Active Filter Notice & Status Toggle */}
       <div className="flex items-center justify-between gap-4 pb-2 border-b border-surface-borderSubtle">
         <div className="flex items-center gap-2 text-xs text-muted">
           <span>Viewing:</span>
           <span className="font-bold text-foreground">
-            {statusFilter === "inbox" ? "Inbox" : "Archived Messages"}
+            {statusFilter === "inbox"
+              ? "Inbox"
+              : statusFilter === "sent"
+              ? "Sent Messages"
+              : "Archived Messages"}
           </span>
           {selectedTag !== "All" && (
             <span className="px-2 py-0.5 rounded-full bg-surface-elevated border border-surface-border text-foreground font-semibold">
@@ -54,7 +59,7 @@ export default function InboxView({
           <span className="text-[11px] text-muted">({emails.length} total)</span>
         </div>
 
-        {/* Status Toggle: Inbox vs Archived */}
+        {/* Status Toggle: Inbox vs Sent vs Archived */}
         <div className="flex items-center bg-surface-elevated p-1 rounded-xl border border-surface-borderSubtle">
           <button
             onClick={() => setStatusFilter("inbox")}
@@ -65,6 +70,16 @@ export default function InboxView({
             }`}
           >
             Inbox
+          </button>
+          <button
+            onClick={() => setStatusFilter("sent")}
+            className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+              statusFilter === "sent"
+                ? "bg-surface-card text-foreground shadow-sm"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            Sent
           </button>
           <button
             onClick={() => setStatusFilter("archived")}
@@ -89,6 +104,8 @@ export default function InboxView({
               ? `No messages match tag "${selectedTag}". Select "All" in the sidebar or click Sync.`
               : statusFilter === "archived"
               ? "Your archive is currently empty."
+              : statusFilter === "sent"
+              ? "No sent emails yet. Click 'New Email' to compose and send your first message!"
               : "No emails in your inbox right now."}
           </p>
         </div>
@@ -155,6 +172,12 @@ export default function InboxView({
                         </span>
                       )}
 
+                      {email.status === "sent" && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/25 flex items-center gap-1">
+                          <Send className="w-2.5 h-2.5" /> Outgoing
+                        </span>
+                      )}
+
                       {email.briefingStatus === "actioned" && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                           <CheckCircle2 className="w-2.5 h-2.5" /> Confirmed
@@ -170,13 +193,27 @@ export default function InboxView({
                     </h3>
 
                     <div className="flex items-center gap-2 mt-1 text-xs text-muted">
-                      <span className="text-foreground/90 font-medium">
-                        {email.senderName || email.sender}
-                      </span>
-                      <span>•</span>
-                      <span className="truncate max-w-[200px]">{email.sender}</span>
-                      <span>•</span>
-                      <span>{timeAgo}</span>
+                      {email.status === "sent" ? (
+                        <>
+                          <span className="text-foreground/90 font-medium">
+                            <span className="text-accent font-bold">To:</span> {email.recipient}
+                          </span>
+                          <span>•</span>
+                          <span className="text-muted">From: {email.senderName || email.sender}</span>
+                          <span>•</span>
+                          <span>{timeAgo}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-foreground/90 font-medium">
+                            {email.senderName || email.sender}
+                          </span>
+                          <span>•</span>
+                          <span className="truncate max-w-[200px]">{email.sender}</span>
+                          <span>•</span>
+                          <span>{timeAgo}</span>
+                        </>
+                      )}
                     </div>
                   </div>
 
