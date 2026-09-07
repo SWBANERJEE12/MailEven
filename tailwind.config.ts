@@ -10,27 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // MailEven Phase 2 Color Tokens
-        charcoal: "#4C4C4C",
-        indigo: {
-          DEFAULT: "var(--accent)",
-          hover: "var(--accent-hover)",
-          light: "var(--accent-light)",
-          border: "var(--accent-border)",
-        },
-        stardust: {
-          DEFAULT: "#A78D78",
-          light: "rgba(167, 141, 120, 0.15)",
-        },
-        foggy: "#E5E5E5",
-        midgrey: "#756C66",
-        steelteal: {
-          DEFAULT: "var(--accent)",
-          hover: "var(--accent-hover)",
-          light: "var(--accent-light)",
-        },
-
-        // Dynamic theme-aware semantic tokens
+        // Semantic design tokens strictly adhering to DESIGN.md
         background: "var(--background)",
         foreground: "var(--foreground)",
         surface: {
@@ -54,15 +34,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: [
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Segoe UI",
-          "Roboto",
-          "Helvetica Neue",
-          "Arial",
-          "sans-serif",
-        ],
+        display: ["var(--font-display)", "Newsreader", "Charter", "Georgia", "serif"],
+        sans: ["var(--font-sans)", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "ui-monospace", "monospace"],
       },
       animation: {
         "pulse-subtle": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",

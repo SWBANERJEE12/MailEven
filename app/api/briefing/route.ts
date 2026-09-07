@@ -94,6 +94,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Record implicit feedback on dismissal
+    if (action === "dismiss") {
+      try {
+        const { recordImplicitDismissal } = await import("@/lib/personalization");
+        await recordImplicitDismissal(userId, emailId, email.category || "General", email.sender);
+      } catch (fbErr) {
+        console.warn("Could not record implicit dismissal feedback:", fbErr);
+      }
+    }
+
     return NextResponse.json({ success: true, email: updated });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

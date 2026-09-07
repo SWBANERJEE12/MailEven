@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -30,6 +30,8 @@ model User {
   tasks             TaskItem[]
   notifications     NotificationLog[]
   pushSubscriptions PushSubscription[]
+  preferences       UserPreference[]
+  interactions      InteractionHistory[]
 }
 
 model ConnectedAccount {
@@ -116,6 +118,10 @@ model Email {
   isRead             Boolean   @default(false)
   isMock             Boolean   @default(false)
   tags               String    @default("[]") // JSON string array e.g. ["Work", "Urgent"]
+  category           String?   @default("General") // Learned or classified category
+  priority           String?   @default("medium") // "critical", "high", "medium", "low", "ignore"
+  personalizationReason String? // Human-readable explanation of why priority/action was chosen
+  personalizationConfidence Float? // 0.0 - 1.0 confidence score
   bodyPurgedAt       DateTime? // Timestamp if raw body was auto-purged
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -125,9 +131,11 @@ model Email {
   calendarEvents   CalendarEvent[]
   tasks            TaskItem[]
   notifications    NotificationLog[]
+  interactions     InteractionHistory[]
 
   @@index([userId, status])
   @@index([userId, briefingStatus])
+  @@index([userId, priority])
   @@index([connectedAccountId])
 }
 
@@ -195,4 +203,43 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserPreference {
+  id               String   @id @default(cuid())
+  userId           String
+  type             String   // "category" | "sender" | "action"
+  key              String   // e.g. "college", "shopping", "internship", "professor@univ.edu", "deadline"
+  score            Float    @default(0.5) // Normalized score: 0.0 (IGNORE) to 1.0 (CRITICAL)
+  confidence       Float    @default(0.1) // 0.0 to 1.0
+  interactionCount Int      @default(0)
+  preferredAction  String?  // "task" | "event" | "none"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, key])
+  @@index([userId, type])
+}
+
+model InteractionHistory {
+  id                  String   @id @default(cuid())
+  userId              String
+  emailId             String?
+  category            String?
+  sender              String?
+  aiPredictedPriority String?  // "low" | "medium" | "high" | "critical" | "ignore"
+  aiPredictedAction   String?  // "task" | "event" | "none"
+  userFeedback        String?  // "low" | "medium" | "high" | "critical" | "ignore" | "task_created" | "event_created" | "dismissed"
+  feedbackType        String   // "explicit_priority" | "implicit_task" | "implicit_calendar" | "implicit_dismiss"
+  explanation         String?  // Human-readable learning context
+  createdAt           DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email Email? @relation(fields: [emailId], references: [id], onDelete: SetNull)
+
+  @@index([userId, feedbackType])
+  @@index([userId, category])
+  @@index([userId, sender])
 }

@@ -108,6 +108,17 @@ export async function POST(req: NextRequest) {
         where: { id: emailId },
         data: { briefingStatus: "actioned" },
       });
+
+      // Record implicit feedback: user chose to create a task for this email
+      try {
+        const emailRecord = await prisma.email.findUnique({ where: { id: emailId } });
+        if (emailRecord) {
+          const { recordImplicitTaskCreation } = await import("@/lib/personalization");
+          await recordImplicitTaskCreation(userId, emailId, emailRecord.category || "General", emailRecord.sender);
+        }
+      } catch (fbErr) {
+        console.warn("Could not record implicit task feedback:", fbErr);
+      }
     }
 
     return NextResponse.json({

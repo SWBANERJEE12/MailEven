@@ -128,24 +128,32 @@ export default function PriorityTilesView({
       // Tags weighting
       if (tags.includes("Work")) score += 10;
       if (tags.includes("Finance")) score += 15;
+      if (tags.includes("College")) score += 20;
       if (tags.includes("Newsletters") || tags.includes("Promotions")) score -= 20;
+
+      // Personalized Priority weight boost
+      if (email.priority === "critical") score += 40;
+      else if (email.priority === "high") score += 25;
+      else if (email.priority === "medium") score += 10;
+      else if (email.priority === "low") score -= 15;
+      else if (email.priority === "ignore") score -= 40;
 
       // Classify into tiers
       let urgency: UrgencyLevel = "low";
-      let urgencyLabel = "Normal";
+      let urgencyLabel = "Standard";
 
-      if (score >= 60) {
+      if (email.priority === "critical" || score >= 60) {
         urgency = "critical";
-        urgencyLabel = isPastDue ? "🚨 Past Due" : "⚡ Critical / ASAP";
-      } else if (score >= 35) {
+        urgencyLabel = isPastDue ? "Past Due" : "Critical Priority";
+      } else if (email.priority === "high" || score >= 35) {
         urgency = "high";
-        urgencyLabel = "⏰ High Urgency";
+        urgencyLabel = "High Urgency";
       } else if (score >= 15) {
         urgency = "medium";
-        urgencyLabel = "📌 Action Required";
+        urgencyLabel = "Action Required";
       } else {
         urgency = "low";
-        urgencyLabel = "Informational";
+        urgencyLabel = "Standard";
       }
 
       return {
@@ -296,24 +304,24 @@ export default function PriorityTilesView({
 
             if (urgency === "critical") {
               isLarge = true;
-              // Larger bento span on desktop + vibrant red/rose gradient and glowing border
+              // Larger bento span on desktop + flat tactile card with subtle red border
               containerStyles =
-                "md:col-span-2 lg:col-span-2 row-span-2 bg-gradient-to-br from-red-500/10 via-surface-card to-surface-card border-2 border-red-500/50 dark:border-red-500/60 shadow-lg shadow-red-500/5 ring-1 ring-red-500/20";
-              badgeStyle = "bg-red-500 text-white font-black shadow-sm animate-pulse";
+                "md:col-span-2 lg:col-span-2 row-span-2 bg-surface-card border-2 border-red-500/60 shadow-md ring-1 ring-red-500/10";
+              badgeStyle = "bg-red-500 text-white font-mono font-bold";
             } else if (urgency === "high") {
-              // Medium span on desktop with warm amber border
+              // Medium span on desktop with amber border
               containerStyles =
-                "md:col-span-2 lg:col-span-1 bg-gradient-to-br from-amber-500/10 via-surface-card to-surface-card border border-amber-500/40 dark:border-amber-500/50 shadow-md shadow-amber-500/5";
-              badgeStyle = "bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30";
+                "md:col-span-2 lg:col-span-1 bg-surface-card border border-amber-500/50 shadow-sm";
+              badgeStyle = "bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono font-bold border border-amber-500/30";
             } else if (urgency === "medium") {
               containerStyles =
-                "col-span-1 bg-surface-card border border-indigo/25 dark:border-steelteal/30 hover:border-accent/60 shadow-sm";
-              badgeStyle = "bg-indigo/15 text-indigo dark:bg-steelteal/20 dark:text-steelteal font-semibold";
+                "col-span-1 bg-surface-card border border-surface-border hover:border-accent/60 shadow-sm";
+              badgeStyle = "bg-accent/15 text-accent font-mono font-semibold";
             } else {
               // Low urgency: Compact neutral tile
               containerStyles =
-                "col-span-1 bg-surface-card/80 border border-surface-borderSubtle hover:border-surface-border opacity-90 hover:opacity-100 shadow-sm";
-              badgeStyle = "bg-surface-elevated text-muted font-medium border border-surface-borderSubtle";
+                "col-span-1 bg-surface-card/90 border border-surface-borderSubtle hover:border-surface-border shadow-sm";
+              badgeStyle = "bg-surface-elevated text-muted font-mono font-medium border border-surface-borderSubtle";
             }
 
             return (

@@ -220,14 +220,14 @@ export default function ActionModal({
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-surface-border bg-surface-elevated flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo/15 dark:bg-steelteal/20 text-indigo dark:text-steelteal flex items-center justify-center">
-              {mode === "event" ? <Calendar className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
+            <div className="w-8 h-8 rounded-xl bg-accent/15 text-accent flex items-center justify-center">
+              {mode === "event" ? <Calendar className="w-4 h-4" strokeWidth={1.8} /> : <CheckSquare className="w-4 h-4" strokeWidth={1.8} />}
             </div>
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-foreground">
+              <h3 className="text-sm sm:text-base font-bold text-foreground font-display">
                 {mode === "event" ? "Confirm Google Calendar Event" : "Confirm Google Task"}
               </h3>
-              <p className="text-[11px] text-muted">
+              <p className="text-[11px] font-mono text-muted">
                 Pre-filled from email by Gemini AI
               </p>
             </div>
@@ -236,7 +236,7 @@ export default function ActionModal({
             onClick={onClose}
             className="p-1.5 text-muted hover:text-foreground rounded-lg hover:bg-surface-highlight transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" strokeWidth={1.8} />
           </button>
         </div>
 
@@ -244,7 +244,7 @@ export default function ActionModal({
         <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh]">
           {errorMsg && (
             <div className="p-3 bg-red-500/15 border border-red-500/30 rounded-xl flex items-center gap-2 text-xs text-red-500">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 flex-shrink-0" strokeWidth={1.8} />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -253,13 +253,13 @@ export default function ActionModal({
           {mode === "event" && (
             <div>
               <label className="block text-xs font-semibold text-muted mb-1 flex items-center gap-1">
-                <Layers className="w-3.5 h-3.5 text-indigo dark:text-steelteal" />
+                <Layers className="w-3.5 h-3.5 text-accent" strokeWidth={1.8} />
                 <span>Add to Calendar:</span>
               </label>
               <select
                 value={selectedCalendarId}
                 onChange={(e) => handleCalendarChange(e.target.value)}
-                className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-xs text-foreground font-medium focus:outline-none focus:border-indigo dark:focus:border-steelteal transition-colors"
+                className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-xs text-foreground font-medium focus:outline-none focus:border-accent transition-colors"
               >
                 {calendars.length > 0 ? (
                   calendars.map((cal) => (
@@ -278,13 +278,13 @@ export default function ActionModal({
           {mode === "task" && taskLists.length > 1 && (
             <div>
               <label className="block text-xs font-semibold text-muted mb-1 flex items-center gap-1">
-                <Layers className="w-3.5 h-3.5 text-indigo dark:text-steelteal" />
+                <Layers className="w-3.5 h-3.5 text-accent" strokeWidth={1.8} />
                 <span>Add to Task List:</span>
               </label>
               <select
                 value={selectedTaskListId}
                 onChange={(e) => setSelectedTaskListId(e.target.value)}
-                className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-xs text-foreground font-medium focus:outline-none focus:border-indigo dark:focus:border-steelteal transition-colors"
+                className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-xs text-foreground font-medium focus:outline-none focus:border-accent transition-colors"
               >
                 {taskLists.map((tl) => (
                   <option key={tl.id} value={tl.id}>
@@ -304,7 +304,7 @@ export default function ActionModal({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-sm text-foreground focus:outline-none focus:border-indigo dark:focus:border-steelteal transition-colors font-medium"
+              className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-sm text-foreground focus:outline-none focus:border-accent transition-colors font-medium"
               placeholder={mode === "event" ? "Meeting title..." : "Task description..."}
             />
           </div>
@@ -315,26 +315,26 @@ export default function ActionModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-muted mb-1 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-indigo dark:text-steelteal" />
+                    <Clock className="w-3 h-3 text-accent" strokeWidth={1.8} />
                     <span>Start Time</span>
                   </label>
                   <input
                     type="datetime-local"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full bg-surface-base border border-surface-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-indigo dark:focus:border-steelteal transition-colors"
+                    className="w-full bg-surface-base border border-surface-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent transition-colors"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-muted mb-1 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-indigo dark:text-steelteal" />
+                    <Clock className="w-3 h-3 text-accent" strokeWidth={1.8} />
                     <span>End Time</span>
                   </label>
                   <input
                     type="datetime-local"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full bg-surface-base border border-surface-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-indigo dark:focus:border-steelteal transition-colors"
+                    className="w-full bg-surface-base border border-surface-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent transition-colors"
                   />
                 </div>
               </div>
@@ -342,7 +342,7 @@ export default function ActionModal({
               {/* Location */}
               <div>
                 <label className="block text-xs font-semibold text-muted mb-1 flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-indigo dark:text-steelteal" />
+                  <MapPin className="w-3 h-3 text-accent" strokeWidth={1.8} />
                   <span>Location or Meeting URL</span>
                 </label>
                 <input
@@ -350,21 +350,21 @@ export default function ActionModal({
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g. Google Meet, Zoom, or Office Room"
-                  className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-indigo dark:focus:border-steelteal transition-colors"
+                  className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
 
               {/* Description */}
               <div>
                 <label className="block text-xs font-semibold text-muted mb-1 flex items-center gap-1">
-                  <FileText className="w-3 h-3 text-indigo dark:text-steelteal" />
+                  <FileText className="w-3 h-3 text-accent" strokeWidth={1.8} />
                   <span>Calendar Description / Context</span>
                 </label>
                 <textarea
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-indigo dark:focus:border-steelteal transition-colors resize-none"
+                  className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-accent transition-colors resize-none"
                 />
               </div>
             </>
@@ -374,14 +374,14 @@ export default function ActionModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-muted mb-1 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-indigo dark:text-steelteal" />
+                    <Clock className="w-3 h-3 text-accent" strokeWidth={1.8} />
                     <span>Due Date</span>
                   </label>
                   <input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full bg-surface-base border border-surface-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-indigo dark:focus:border-steelteal transition-colors"
+                    className="w-full bg-surface-base border border-surface-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent transition-colors"
                   />
                 </div>
 
@@ -390,7 +390,7 @@ export default function ActionModal({
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as any)}
-                    className="w-full bg-surface-base border border-surface-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-indigo dark:focus:border-steelteal transition-colors"
+                    className="w-full bg-surface-base border border-surface-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent transition-colors"
                   >
                     <option value="low">Low Priority</option>
                     <option value="medium">Medium Priority</option>
@@ -401,14 +401,14 @@ export default function ActionModal({
 
               <div>
                 <label className="block text-xs font-semibold text-muted mb-1 flex items-center gap-1">
-                  <FileText className="w-3 h-3 text-indigo dark:text-steelteal" />
+                  <FileText className="w-3 h-3 text-accent" strokeWidth={1.8} />
                   <span>Task Notes</span>
                 </label>
                 <textarea
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-indigo dark:focus:border-steelteal transition-colors resize-none"
+                  className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-accent transition-colors resize-none"
                 />
               </div>
             </>
@@ -416,7 +416,7 @@ export default function ActionModal({
 
           {/* Email Reference Snippet */}
           <div className="p-3 bg-surface-base rounded-xl border border-surface-borderSubtle text-[11px] text-muted flex items-start gap-2">
-            <span className="text-indigo dark:text-steelteal font-bold">Source:</span>
+            <span className="text-accent font-bold font-mono">Source:</span>
             <span className="truncate">
               {email.subject} ({email.senderName || email.sender})
             </span>
@@ -435,18 +435,18 @@ export default function ActionModal({
           <button
             onClick={mode === "event" ? handleConfirmEvent : handleConfirmTask}
             disabled={isSubmitting}
-            className="px-5 py-2 bg-indigo text-white dark:bg-steelteal text-xs font-bold rounded-xl transition-all shadow-sm hover:opacity-90 flex items-center gap-1.5 disabled:opacity-50"
+            className="px-5 py-2 bg-accent text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:opacity-90 flex items-center gap-1.5 disabled:opacity-50 active:translate-y-[1px]"
           >
             {isSubmitting ? (
               <span>Saving...</span>
             ) : mode === "event" ? (
               <>
-                <Calendar className="w-3.5 h-3.5" />
+                <Calendar className="w-3.5 h-3.5" strokeWidth={1.8} />
                 <span>Confirm & Schedule</span>
               </>
             ) : (
               <>
-                <CheckSquare className="w-3.5 h-3.5" />
+                <CheckSquare className="w-3.5 h-3.5" strokeWidth={1.8} />
                 <span>Confirm & Add Task</span>
               </>
             )}

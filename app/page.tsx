@@ -281,7 +281,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex selection:bg-indigo selection:text-foggy">
+    <div className="min-h-screen bg-background text-foreground flex selection:bg-accent selection:text-white font-sans">
       {/* Desktop & Mobile Slide-Over Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -315,8 +315,8 @@ export default function Home() {
 
         {/* Global Toast Notification */}
         {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 p-4 bg-surface-card border border-indigo/40 dark:border-steelteal/40 rounded-2xl shadow-xl flex items-center gap-3 animate-fade-in text-xs font-semibold text-foreground max-w-md backdrop-blur-md">
-            <CheckCircle2 className="w-5 h-5 text-indigo dark:text-steelteal flex-shrink-0" />
+          <div className="fixed bottom-6 right-6 z-50 p-4 bg-surface-card border border-accent/40 rounded-xl shadow-xl flex items-center gap-3 animate-fade-in text-xs font-semibold text-foreground max-w-md backdrop-blur-md">
+            <CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0" strokeWidth={1.8} />
             <div className="flex-1">
               <span>{toastMessage.text}</span>
               {toastMessage.link && (
@@ -324,10 +324,10 @@ export default function Home() {
                   href={toastMessage.link}
                   target="_blank"
                   rel="noreferrer"
-                  className="block text-indigo dark:text-steelteal underline mt-0.5 flex items-center gap-1 font-bold"
+                  className="block text-accent underline mt-0.5 flex items-center gap-1 font-bold"
                 >
                   <span>Open in Google</span>
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="w-3 h-3" strokeWidth={1.8} />
                 </a>
               )}
             </div>

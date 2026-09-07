@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { fetchRecentGmailMessages } from "@/lib/google";
 import { analyzeEmailWithGroq } from "@/lib/gemini";
+import { applyPersonalization } from "@/lib/personalization";
 import { sendNotificationToUser } from "@/lib/notifications";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { validateRequestOrigin, invalidOriginResponse } from "@/lib/security";
@@ -162,6 +163,13 @@ export async function POST(req: NextRequest) {
             msg.receivedAt
           );
 
+          // Apply user-specific learned personalization
+          const decision = await applyPersonalization(
+            userId,
+            analysis,
+            msg.sender
+          );
+
           const newEmail = await prisma.email.create({
             data: {
               userId,
@@ -178,12 +186,16 @@ export async function POST(req: NextRequest) {
               bodyHtml: msg.bodyHtml,
               receivedAt: msg.receivedAt,
               summary: analysis.summary,
-              isActionable: analysis.isActionable,
-              actionType: analysis.actionType,
-              eventProposal: analysis.eventProposal ? JSON.stringify(analysis.eventProposal) : null,
-              taskProposal: analysis.taskProposal ? JSON.stringify(analysis.taskProposal) : null,
-              tags: JSON.stringify(analysis.tags),
-              briefingStatus: analysis.isActionable ? "pending" : "dismissed",
+              isActionable: decision.requiresAction,
+              actionType: decision.actionType,
+              category: decision.category,
+              priority: decision.priority,
+              personalizationReason: decision.reason,
+              personalizationConfidence: decision.confidence,
+              eventProposal: decision.eventProposal ? JSON.stringify(decision.eventProposal) : null,
+              taskProposal: decision.taskProposal ? JSON.stringify(decision.taskProposal) : null,
+              tags: JSON.stringify(decision.tags),
+              briefingStatus: decision.requiresAction ? "pending" : "dismissed",
               isMock: false,
             },
           });
@@ -191,7 +203,7 @@ export async function POST(req: NextRequest) {
           syncedCount++;
 
           await sendNotificationToUser(userId, {
-            title: `New (${acc.name || acc.email}): ${msg.subject}`,
+            title: `[${decision.priority.toUpperCase()}] ${acc.name || acc.email}: ${msg.subject}`,
             message: `${msg.senderName}: ${msg.snippet.slice(0, 75)}...`,
             summary: analysis.summary,
             emailId: newEmail.id,
@@ -231,6 +243,13 @@ export async function POST(req: NextRequest) {
     now
   );
 
+  // Apply Personalized Learning Engine to simulated email
+  const decision = await applyPersonalization(
+    userId,
+    analysis,
+    `${randomTemplate.senderName} <${randomTemplate.sender}>`
+  );
+
   const newEmail = await prisma.email.create({
     data: {
       userId,
@@ -245,13 +264,17 @@ export async function POST(req: NextRequest) {
       snippet: randomTemplate.snippet,
       bodyText: randomTemplate.bodyText,
       receivedAt: now,
-      summary: analysis.summary,
-      isActionable: analysis.isActionable,
-      actionType: analysis.actionType,
-      eventProposal: analysis.eventProposal ? JSON.stringify(analysis.eventProposal) : null,
-      taskProposal: analysis.taskProposal ? JSON.stringify(analysis.taskProposal) : null,
-      tags: JSON.stringify(analysis.tags),
-      briefingStatus: analysis.isActionable ? "pending" : "dismissed",
+      summary: decision.summary,
+      isActionable: decision.requiresAction,
+      actionType: decision.actionType,
+      category: decision.category,
+      priority: decision.priority,
+      personalizationReason: decision.reason,
+      personalizationConfidence: decision.confidence,
+      eventProposal: decision.eventProposal ? JSON.stringify(decision.eventProposal) : null,
+      taskProposal: decision.taskProposal ? JSON.stringify(decision.taskProposal) : null,
+      tags: JSON.stringify(decision.tags),
+      briefingStatus: decision.requiresAction ? "pending" : "dismissed",
       isMock: true,
     },
   });

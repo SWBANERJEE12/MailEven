@@ -88,10 +88,51 @@ export async function POST(req: NextRequest) {
             taskProposal: mock.taskProposal ? JSON.stringify(mock.taskProposal) : null,
             tags: JSON.stringify(mock.tags),
             briefingStatus: mock.briefingStatus,
+            category: (mock as any).category || (mock.tags && mock.tags[0]) || "Personal",
+            priority: (mock as any).priority || (mock.isActionable ? "medium" : "low"),
+            personalizationReason: (mock as any).personalizationReason || null,
+            personalizationConfidence: (mock as any).personalizationConfidence || 0.5,
             isMock: true,
           },
         });
       }
+    }
+
+    // Seed baseline learned preferences for the demo user
+    const defaultPreferences = [
+      { type: "category", key: "College", score: 0.85, confidence: 0.90, interactionCount: 6, preferredAction: "task" },
+      { type: "category", key: "Shopping", score: 0.20, confidence: 0.88, interactionCount: 5, preferredAction: "none" },
+      { type: "category", key: "Work", score: 0.75, confidence: 0.82, interactionCount: 4, preferredAction: "task" },
+      { type: "sender", key: "vit.edu", score: 0.88, confidence: 0.92, interactionCount: 5, preferredAction: "task" },
+      { type: "sender", key: "amazon.com", score: 0.18, confidence: 0.85, interactionCount: 4, preferredAction: "none" },
+      { type: "action", key: "deadline_to_task", score: 0.90, confidence: 0.92, interactionCount: 7, preferredAction: "task" },
+    ];
+
+    for (const pref of defaultPreferences) {
+      await prisma.userPreference.upsert({
+        where: {
+          userId_type_key: {
+            userId,
+            type: pref.type,
+            key: pref.key,
+          },
+        },
+        update: {
+          score: pref.score,
+          confidence: pref.confidence,
+          interactionCount: pref.interactionCount,
+          preferredAction: pref.preferredAction,
+        },
+        create: {
+          userId,
+          type: pref.type,
+          key: pref.key,
+          score: pref.score,
+          confidence: pref.confidence,
+          interactionCount: pref.interactionCount,
+          preferredAction: pref.preferredAction,
+        },
+      });
     }
 
     await prisma.notificationLog.create({

@@ -55,6 +55,10 @@ export interface MockEmailData {
     priority?: "low" | "medium" | "high";
   } | null;
   tags: string[];
+  category?: string;
+  priority?: "critical" | "high" | "medium" | "low" | "ignore";
+  personalizationReason?: string;
+  personalizationConfidence?: number;
   briefingStatus: "pending" | "interested" | "dismissed" | "actioned";
 }
 
@@ -342,6 +346,82 @@ Sale ends midnight tonight. Free shipping on all orders over $75.`,
     eventProposal: null,
     taskProposal: null,
     tags: ["Promotions"],
+    briefingStatus: "dismissed",
+  },
+  {
+    id: "mock_email_code2create",
+    accountId: "demo_acc_personal",
+    accountEmail: "alex.personal@gmail.com",
+    sender: "hackathon@vit.edu",
+    senderName: "Code2Create Organizing Committee",
+    recipient: "alex.personal@gmail.com",
+    subject: "URGENT: Code2Create Hackathon Submission Deadline due Friday 11:59 PM",
+    snippet: "Reminder to all teams: Final project repo link, demo video, and architecture documentation must be submitted before Friday...",
+    bodyText: `Dear Participant,
+
+This is an urgent reminder regarding your team's Code2Create 2026 hackathon submission.
+
+Submission Deadline: Friday, September 11, 2026 at 11:59 PM IST.
+Portal: https://code2create.vit.edu/submit/team-maileven
+
+Required Deliverables:
+1. GitHub public repository link with clean README.
+2. 3-minute unlisted YouTube video walkthrough.
+3. System architecture diagram and Groq model usage breakdown.
+
+Late submissions will not be eligible for judge evaluations.
+
+Best of luck,
+Code2Create Technical Committee`,
+    receivedAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 mins ago
+    summary: "Mandatory Code2Create project submission deadline on Friday at 11:59 PM IST requiring GitHub repo link, video demo, and architecture breakdown.",
+    isActionable: true,
+    actionType: "task",
+    eventProposal: null,
+    taskProposal: {
+      title: "Submit Code2Create Hackathon Project & Video Demo",
+      dueDate: new Date(Date.now() + 1000 * 60 * 60 * 48).toISOString(),
+      notes: "Upload public GitHub repo link and 3-min video walkthrough to https://code2create.vit.edu/submit/team-maileven before Friday 11:59 PM.",
+      priority: "high",
+    },
+    tags: ["College", "Urgent"],
+    category: "College",
+    priority: "high",
+    personalizationReason: "High priority because you consistently prioritize College deadlines and prefer creating tasks for them.",
+    personalizationConfidence: 0.94,
+    briefingStatus: "pending",
+  },
+  {
+    id: "mock_email_amazon",
+    accountId: "demo_acc_personal",
+    accountEmail: "alex.personal@gmail.com",
+    sender: "ship-confirm@amazon.com",
+    senderName: "Amazon.com Shipping",
+    recipient: "alex.personal@gmail.com",
+    subject: "Amazon.com: Your package has shipped! (Order #114-8912891-28192)",
+    snippet: "Your package containing Anker USB-C Hub has shipped and is estimated to arrive tomorrow by 8:00 PM...",
+    bodyText: `Hi Alex,
+
+Great news! Your package has shipped and will arrive tomorrow, Wednesday, September 9 by 8:00 PM.
+
+Item:
+Anker 7-in-1 USB-C Hub Multi-Port Adapter
+Carrier: Amazon Logistics (Tracking: TBA9182390192)
+
+Track your package: https://www.amazon.com/progress-tracker/package/114-8912891
+
+Thank you for shopping with Amazon!`,
+    receivedAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+    summary: "Amazon package with Anker USB-C Hub has shipped via Amazon Logistics, scheduled for delivery tomorrow by 8:00 PM.",
+    isActionable: false,
+    actionType: "none",
+    eventProposal: null,
+    taskProposal: null,
+    tags: ["Shopping"],
+    category: "Shopping",
+    priority: "low",
+    personalizationReason: "Low priority because you previously marked shopping emails as low priority.",
+    personalizationConfidence: 0.89,
     briefingStatus: "dismissed",
   },
 ];

@@ -22,25 +22,25 @@ export default function CookieNotice() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 z-50 max-w-md bg-surface-card border border-surface-border p-3.5 rounded-2xl shadow-xl flex items-center gap-3 text-xs animate-fade-in backdrop-blur-md">
-      <div className="w-8 h-8 rounded-xl bg-indigo/15 text-indigo dark:text-steelteal flex items-center justify-center flex-shrink-0">
-        <Cookie className="w-4 h-4" />
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 z-50 max-w-md bg-surface-card border border-surface-border p-3.5 rounded-xl shadow-xl flex items-center gap-3 text-xs animate-fade-in backdrop-blur-md">
+      <div className="w-8 h-8 rounded-lg bg-accent/15 text-accent flex items-center justify-center flex-shrink-0">
+        <Cookie className="w-4 h-4" strokeWidth={1.8} />
       </div>
-      <div className="flex-1 text-midgrey dark:text-foggy/80 leading-relaxed text-[11px]">
-        MailEven stores a single preference cookie to remember your theme and account filters. No tracking or third-party cookies are used.
+      <div className="flex-1 text-muted leading-relaxed text-[11px]">
+        MailEven stores a single preference cookie for theme and account filter selection. No tracking or ad cookies are used.
       </div>
       <button
         onClick={handleDismiss}
-        className="px-2.5 py-1 bg-indigo text-white dark:bg-steelteal text-[11px] font-semibold rounded-lg hover:opacity-90 transition-opacity"
+        className="px-2.5 py-1 bg-accent text-white text-[11px] font-semibold rounded-lg hover:opacity-90 transition-opacity"
       >
-        Got it
+        Acknowledge
       </button>
       <button
         onClick={handleDismiss}
-        className="p-1 text-midgrey hover:text-charcoal dark:hover:text-foggy"
+        className="p-1 text-muted hover:text-foreground"
         aria-label="Close"
       >
-        <X className="w-3.5 h-3.5" />
+        <X className="w-3.5 h-3.5" strokeWidth={1.8} />
       </button>
     </div>
   );

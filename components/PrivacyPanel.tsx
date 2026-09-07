@@ -145,7 +145,7 @@ export default function PrivacyPanel({ accounts, onRefreshData }: PrivacyPanelPr
       {/* Header */}
       <div>
         <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-indigo dark:text-steelteal" />
+          <ShieldCheck className="w-5 h-5 text-accent" strokeWidth={1.8} />
           <span>Security & Privacy Panel</span>
         </h2>
         <p className="text-xs text-muted mt-0.5">
@@ -173,8 +173,8 @@ export default function PrivacyPanel({ accounts, onRefreshData }: PrivacyPanelPr
       {/* 1. Plain, un-buried Gemini AI Disclosure */}
       <div className="p-5 rounded-2xl bg-surface-card border border-surface-border space-y-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-indigo/15 dark:bg-steelteal/20 text-indigo dark:text-steelteal flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-xl bg-accent/15 text-accent flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-4 h-4" strokeWidth={1.8} />
           </div>
           <div>
             <h3 className="text-sm font-bold text-foreground">Gemini AI Zero-Model-Training Guarantee</h3>
@@ -190,16 +190,16 @@ export default function PrivacyPanel({ accounts, onRefreshData }: PrivacyPanelPr
       <div className="p-5 rounded-2xl bg-surface-card border border-surface-border space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-surface-elevated text-indigo dark:text-steelteal flex items-center justify-center flex-shrink-0">
-              <Database className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-surface-elevated text-accent flex items-center justify-center flex-shrink-0">
+              <Database className="w-4 h-4" strokeWidth={1.8} />
             </div>
             <div>
               <h3 className="text-sm font-bold text-foreground">Storage Transparency by Connected Account</h3>
               <p className="text-[11px] text-muted">Exactly what is stored locally in SQLite vs encrypted at rest</p>
             </div>
           </div>
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-surface-elevated text-muted border border-surface-borderSubtle flex items-center gap-1.5">
-            <Lock className="w-3 h-3 text-emerald-500" />
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-surface-elevated text-muted border border-surface-borderSubtle flex items-center gap-1.5 font-mono">
+            <Lock className="w-3 h-3 text-accent" strokeWidth={1.8} />
             <span>AES-256-GCM at Rest</span>
           </span>
         </div>
@@ -213,7 +213,7 @@ export default function PrivacyPanel({ accounts, onRefreshData }: PrivacyPanelPr
               <div className="flex items-center gap-3">
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-sm flex-shrink-0"
-                  style={{ backgroundColor: acc.color || "#4F6B6E" }}
+                  style={{ backgroundColor: acc.color || "#6E473B" }}
                 >
                   {acc.initials || acc.email.slice(0, 2).toUpperCase()}
                 </div>
@@ -221,16 +221,16 @@ export default function PrivacyPanel({ accounts, onRefreshData }: PrivacyPanelPr
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-foreground">{acc.name || acc.email}</span>
                     {acc.isPrimary && (
-                      <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-indigo/15 text-indigo dark:bg-steelteal/20 dark:text-steelteal">
+                      <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-accent/15 text-accent">
                         Primary
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-muted">{acc.email}</div>
-                  <div className="flex items-center gap-3 text-[10px] text-muted mt-1">
+                  <div className="text-[11px] font-mono text-muted">{acc.email}</div>
+                  <div className="flex items-center gap-3 text-[10px] text-muted mt-1 font-mono">
                     <span>OAuth Scopes: <code className="text-foreground/80">gmail.readonly</code>, <code className="text-foreground/80">calendar.events</code>, <code className="text-foreground/80">tasks</code></span>
                     <span>•</span>
-                    <span className="text-emerald-500 font-semibold">Tokens Encrypted</span>
+                    <span className="text-accent font-semibold">Tokens Encrypted</span>
                   </div>
                 </div>
               </div>
@@ -242,7 +242,7 @@ export default function PrivacyPanel({ accounts, onRefreshData }: PrivacyPanelPr
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
                   title="Revoke OAuth token server-side and delete all local rows for this account"
                 >
-                  <Unlink className="w-3.5 h-3.5" />
+                  <Unlink className="w-3.5 h-3.5" strokeWidth={1.8} />
                   <span>{revokingAccountId === acc.id ? "Revoking..." : "Revoke & Delete"}</span>
                 </button>
               </div>
@@ -254,8 +254,8 @@ export default function PrivacyPanel({ accounts, onRefreshData }: PrivacyPanelPr
       {/* 3. Configurable Raw Email Body Retention */}
       <div className="p-5 rounded-2xl bg-surface-card border border-surface-border space-y-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-surface-elevated text-indigo dark:text-steelteal flex items-center justify-center flex-shrink-0">
-            <Clock className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-xl bg-surface-elevated text-accent flex items-center justify-center flex-shrink-0">
+            <Clock className="w-4 h-4" strokeWidth={1.8} />
           </div>
           <div>
             <h3 className="text-sm font-bold text-foreground">Email Body Retention & Auto-Purge</h3>
@@ -310,8 +310,8 @@ export default function PrivacyPanel({ accounts, onRefreshData }: PrivacyPanelPr
       {/* 4. Data Portability & Complete Deletion */}
       <div className="p-5 rounded-2xl bg-surface-card border border-surface-border space-y-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-surface-elevated text-indigo dark:text-steelteal flex items-center justify-center flex-shrink-0">
-            <Download className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-xl bg-surface-elevated text-accent flex items-center justify-center flex-shrink-0">
+            <Download className="w-4 h-4" strokeWidth={1.8} />
           </div>
           <div>
             <h3 className="text-sm font-bold text-foreground">Data Portability & Complete Erasure</h3>
@@ -322,9 +322,9 @@ export default function PrivacyPanel({ accounts, onRefreshData }: PrivacyPanelPr
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
             onClick={handleExportData}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo text-white dark:bg-steelteal text-xs font-bold rounded-xl shadow-sm hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 px-4 py-2 bg-accent text-white text-xs font-bold rounded-xl shadow-sm hover:opacity-90 transition-opacity"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4" strokeWidth={1.8} />
             <span>Export All Local Data (JSON)</span>
           </button>
 
@@ -333,7 +333,7 @@ export default function PrivacyPanel({ accounts, onRefreshData }: PrivacyPanelPr
             disabled={isDeletingAll}
             className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 text-xs font-bold rounded-xl transition-colors disabled:opacity-50"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-4 h-4" strokeWidth={1.8} />
             <span>{isDeletingAll ? "Deleting..." : "Permanently Delete All Records"}</span>
           </button>
         </div>

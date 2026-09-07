@@ -128,6 +128,17 @@ export async function POST(req: NextRequest) {
         where: { id: emailId },
         data: { briefingStatus: "actioned" },
       });
+
+      // Record implicit feedback: user scheduled a calendar event
+      try {
+        const emailRecord = await prisma.email.findUnique({ where: { id: emailId } });
+        if (emailRecord) {
+          const { recordImplicitCalendarCreation } = await import("@/lib/personalization");
+          await recordImplicitCalendarCreation(userId, emailId, emailRecord.category || "General", emailRecord.sender);
+        }
+      } catch (fbErr) {
+        console.warn("Could not record implicit calendar feedback:", fbErr);
+      }
     }
 
     return NextResponse.json({

@@ -1,8 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  /* Typography bindings strictly adhering to DESIGN.md Rule 4 */
+  --font-display: "Newsreader", "Charter", "Playfair Display", "Georgia", "Cambria", serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
   /* Default / Light Mode: Main #E5E5E5, Accent #6E473B */
   --background: #E5E5E5;
   --foreground: #2B2523;

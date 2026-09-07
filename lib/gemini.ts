@@ -2,9 +2,15 @@ import { createGroqClient } from "@/lib/groq";
 
 export interface AIAnalysisResult {
   summary: string;
-  tags: string[];
-  isActionable: boolean;
+  category: string; // e.g. "College", "Internship", "Work", "Shopping", "Finance", "Travel", "Newsletters", "Promotions", "Personal"
+  priority: "low" | "medium" | "high" | "critical" | "ignore";
+  requiresAction: boolean;
+  isActionable: boolean; // Backwards-compatible alias for requiresAction
   actionType: "event" | "task" | "none";
+  deadline?: string | null; // ISO Date string or null
+  senderType?: "university" | "corporate" | "retail" | "newsletter" | "personal" | "system";
+  confidence: number; // 0.0 to 1.0
+  tags: string[];
   eventProposal: {
     title: string;
     startTime: string; // ISO String
@@ -32,8 +38,8 @@ export async function analyzeEmailWithGroq(
   if (apiKey) {
     try {
       const groq = createGroqClient(apiKey);
-      const prompt = `You are the AI core for MailEven, an executive email assistant.
-Analyze this email and extract structured actions, tags, and a crisp summary.
+      const prompt = `You are the AI core for MailEven, an executive email action-management assistant.
+Analyze this email and extract structured data, classifications, actions, and an executive briefing.
 
 EMAIL METADATA:
 - Sender: ${sender}
@@ -45,32 +51,42 @@ ${body.slice(0, 4000)}
 """
 
 REQUIREMENTS:
-1. summary: A crisp 1-2 sentence summary capturing the key context and why it matters.
-2. tags: Array of 1-3 tags from: ["Work", "Personal", "Finance", "Travel", "Newsletters", "Promotions", "Urgent"].
-3. isActionable: boolean. True if the email requires calendar scheduling, RSVP, reply, task completion, or deadline follow-up.
-4. actionType: "event" (if it contains a meeting, flight, reservation, webinar, call with a specific time), "task" (if it contains action items, requests, deadlines, review requests), or "none".
-5. eventProposal: If actionType is "event", provide:
-   - title: concise event title
-   - startTime: ISO 8601 string (e.g. 2026-09-10T14:00:00.000Z)
-   - endTime: ISO 8601 string (usually 1 hour after startTime if unspecified)
-   - location: location or meeting link (Zoom, Meet, or physical)
-   - description: brief context
-   If not an event, set eventProposal to null.
-6. taskProposal: If actionType is "task", provide:
-   - title: action-oriented task name (e.g. "Review Q3 financial deck")
-   - dueDate: ISO 8601 date/time or null
-   - notes: key details needed to execute
-   - priority: "low" | "medium" | "high"
-   If not a task, set taskProposal to null.
+1. summary: A crisp 1-2 sentence executive briefing capturing the key context and why it matters.
+2. category: Primary category. Choose the best fitting from: ["College", "Internship", "Work", "Shopping", "Finance", "Travel", "Newsletters", "Promotions", "Personal"].
+3. priority: Baseline generic priority without user personalization: "critical" (immediate emergency/same-day deadline), "high" (important deliverable/interview/audit/urgent request), "medium" (normal inquiry/meeting request), "low" (receipt/non-urgent notification/shipping update), or "ignore" (spam/unsolicited promotion/newsletter).
+4. requiresAction: boolean. True if the email requires calendar scheduling, RSVP, reply, task completion, or deadline follow-up.
+5. actionType: "event" (if it contains a meeting, flight, reservation, webinar, call with a specific time), "task" (if it contains action items, requests, deadlines, review requests), or "none".
+6. deadline: Explicit ISO 8601 date string (e.g. "2026-09-12") or ISO timestamp if an explicit deadline is mentioned in the text, otherwise null.
+7. senderType: "university" | "corporate" | "retail" | "newsletter" | "personal" | "system".
+8. confidence: Float between 0.0 and 1.0 representing extraction confidence.
+9. tags: Array of 1-3 tags from: ["Work", "Personal", "Finance", "Travel", "Newsletters", "Promotions", "Urgent", "College", "Internship", "Shopping"].
+10. eventProposal: If actionType is "event", provide:
+    - title: concise event title
+    - startTime: ISO 8601 string (e.g. 2026-09-10T14:00:00.000Z)
+    - endTime: ISO 8601 string (usually 1 hour after startTime if unspecified)
+    - location: location or meeting link (Zoom, Meet, or physical)
+    - description: brief context
+    If not an event, set eventProposal to null.
+11. taskProposal: If actionType is "task", provide:
+    - title: action-oriented task name (e.g. "Submit Code2Create project proposal")
+    - dueDate: ISO 8601 date/time or null
+    - notes: key details needed to execute
+    - priority: "low" | "medium" | "high"
+    If not a task, set taskProposal to null.
 
 Return ONLY valid JSON matching this exact structure without markdown backticks:
 {
   "summary": "...",
-  "tags": ["..."],
-  "isActionable": true,
-  "actionType": "event" | "task" | "none",
-  "eventProposal": null | { "title": "...", "startTime": "...", "endTime": "...", "location": "...", "description": "..." },
-  "taskProposal": null | { "title": "...", "dueDate": "...", "notes": "...", "priority": "medium" }
+  "category": "College",
+  "priority": "high",
+  "requiresAction": true,
+  "actionType": "task",
+  "deadline": "2026-09-12",
+  "senderType": "university",
+  "confidence": 0.94,
+  "tags": ["College", "Urgent"],
+  "eventProposal": null,
+  "taskProposal": { "title": "...", "dueDate": "...", "notes": "...", "priority": "high" }
 }`;
 
       const response = await groq.chat.completions.create({
@@ -81,7 +97,7 @@ Return ONLY valid JSON matching this exact structure without markdown backticks:
         messages: [
           {
             role: "system",
-            content: "Return only a valid JSON object. Do not use markdown or add commentary.",
+            content: "Return only a valid JSON object matching the requested schema. Do not use markdown backticks or commentary.",
           },
           { role: "user", content: prompt },
         ],
@@ -90,12 +106,25 @@ Return ONLY valid JSON matching this exact structure without markdown backticks:
       const responseText = response.choices[0]?.message?.content?.trim() || "";
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]) as AIAnalysisResult;
+        const parsed = JSON.parse(jsonMatch[0]) as any;
+        const validCategories = ["College", "Internship", "Work", "Shopping", "Finance", "Travel", "Newsletters", "Promotions", "Personal"];
+        const category = validCategories.includes(parsed.category) ? parsed.category : "Work";
+        const validPriorities = ["critical", "high", "medium", "low", "ignore"];
+        const priority = validPriorities.includes(parsed.priority) ? parsed.priority : "medium";
+        const requiresAction = Boolean(parsed.requiresAction ?? parsed.isActionable);
+        const actionType = ["event", "task", "none"].includes(parsed.actionType) ? parsed.actionType : (requiresAction ? "task" : "none");
+
         return {
           summary: parsed.summary || generateFallbackSummary(subject, body),
-          tags: Array.isArray(parsed.tags) && parsed.tags.length > 0 ? parsed.tags : ["Work"],
-          isActionable: Boolean(parsed.isActionable),
-          actionType: ["event", "task", "none"].includes(parsed.actionType) ? parsed.actionType : "none",
+          category,
+          priority: priority as any,
+          requiresAction,
+          isActionable: requiresAction,
+          actionType: actionType as any,
+          deadline: parsed.deadline || null,
+          senderType: parsed.senderType || "corporate",
+          confidence: typeof parsed.confidence === "number" ? Math.max(0.1, Math.min(1.0, parsed.confidence)) : 0.85,
+          tags: Array.isArray(parsed.tags) && parsed.tags.length > 0 ? parsed.tags : [category],
           eventProposal: parsed.eventProposal || null,
           taskProposal: parsed.taskProposal || null,
         };
@@ -205,6 +234,35 @@ export function heuristicEmailAnalysis(
     }
   }
 
+  // Detect Category
+  let category = "Work";
+  let senderType: "university" | "corporate" | "retail" | "newsletter" | "personal" | "system" = "corporate";
+
+  const senderLower = sender.toLowerCase();
+  if (senderLower.includes(".edu") || senderLower.includes("college") || senderLower.includes("university") || combined.includes("college") || combined.includes("assignment") || combined.includes("submission") || combined.includes("course") || combined.includes("professor") || combined.includes("syllabus") || combined.includes("code2create")) {
+    category = "College";
+    senderType = "university";
+  } else if (combined.includes("internship") || combined.includes("offer letter") || combined.includes("interview") || combined.includes("recruiter") || combined.includes("applicant") || combined.includes("application status")) {
+    category = "Internship";
+    senderType = "corporate";
+  } else if (combined.includes("amazon") || combined.includes("shipped") || combined.includes("delivery") || combined.includes("tracking") || combined.includes("order #") || combined.includes("package") || combined.includes("store") || combined.includes("cart")) {
+    category = "Shopping";
+    senderType = "retail";
+  } else if (tags.includes("Travel")) {
+    category = "Travel";
+  } else if (tags.includes("Finance")) {
+    category = "Finance";
+  } else if (tags.includes("Newsletters")) {
+    category = "Newsletters";
+    senderType = "newsletter";
+  } else if (tags.includes("Promotions")) {
+    category = "Promotions";
+    senderType = "retail";
+  } else if (tags.includes("Personal") || senderLower.includes("family") || senderLower.includes("@gmail.com")) {
+    category = "Personal";
+    senderType = "personal";
+  }
+
   // Detect Event vs Task
   const isEvent =
     combined.includes("meeting") ||
@@ -228,20 +286,45 @@ export function heuristicEmailAnalysis(
       combined.includes("action item") ||
       combined.includes("deadline") ||
       combined.includes("due by") ||
+      combined.includes("due on") ||
+      combined.includes("due friday") ||
       combined.includes("send over") ||
       combined.includes("follow up") ||
       combined.includes("todo") ||
+      combined.includes("submission") ||
       combined.includes("task"));
 
   const actionType: "event" | "task" | "none" = isEvent
     ? "event"
     : isTask
     ? "task"
-    : tags.includes("Urgent") || tags.includes("Finance")
+    : tags.includes("Urgent") || tags.includes("Finance") || category === "College"
     ? "task"
     : "none";
 
   const isActionable = actionType !== "none";
+
+  // Generic Priority
+  let priority: "critical" | "high" | "medium" | "low" | "ignore" = "medium";
+  if (tags.includes("Urgent") || combined.includes("urgent") || combined.includes("asap")) {
+    priority = "critical";
+  } else if (category === "Internship" || category === "College" || tags.includes("Finance") || isEvent) {
+    priority = "high";
+  } else if (category === "Shopping" || tags.includes("Newsletters") || tags.includes("Promotions")) {
+    priority = category === "Shopping" ? "low" : "ignore";
+  }
+
+  // Deadline extraction if mentioned
+  let deadline: string | null = null;
+  if (combined.includes("due friday") || combined.includes("friday")) {
+    const d = new Date(receivedAt);
+    d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7 || 7));
+    deadline = d.toISOString().split("T")[0];
+  } else if (combined.includes("due tomorrow") || combined.includes("tomorrow")) {
+    const d = new Date(receivedAt);
+    d.setDate(d.getDate() + 1);
+    deadline = d.toISOString().split("T")[0];
+  }
 
   // Event Proposal generator
   let eventProposal = null;
@@ -275,17 +358,23 @@ export function heuristicEmailAnalysis(
 
     taskProposal = {
       title: subject.replace(/^(re:|fwd:)\s*/i, "").trim(),
-      dueDate: dueDate.toISOString(),
+      dueDate: deadline ? new Date(deadline).toISOString() : dueDate.toISOString(),
       notes: `Action required from ${sender}: ${generateFallbackSummary(subject, body)}`,
-      priority: tags.includes("Urgent") ? ("high" as const) : ("medium" as const),
+      priority: (priority === "critical" || priority === "high" ? "high" : "medium") as any,
     };
   }
 
   return {
     summary: generateFallbackSummary(subject, body),
-    tags,
+    category,
+    priority,
+    requiresAction: isActionable,
     isActionable,
     actionType,
+    deadline,
+    senderType,
+    confidence: 0.85,
+    tags,
     eventProposal,
     taskProposal,
   };

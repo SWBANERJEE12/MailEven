@@ -147,8 +147,38 @@ export default function InboxView({
                         )}
                       </div>
 
+                      {/* Category Pill */}
+                      {email.category && (
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/25">
+                          {email.category}
+                        </span>
+                      )}
+
+                      {/* Priority Pill with Explainability Tooltip */}
+                      {email.priority && (
+                        <span
+                          title={email.personalizationReason || `Personalized priority: ${email.priority}`}
+                          className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border flex items-center gap-1 cursor-help ${
+                            email.priority === "critical"
+                              ? "bg-red-500/15 text-red-400 border-red-500/30"
+                              : email.priority === "high"
+                              ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
+                              : email.priority === "medium"
+                              ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                              : "bg-blue-500/15 text-blue-400 border-blue-500/30"
+                          }`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            email.priority === "critical" ? "bg-red-500" :
+                            email.priority === "high" ? "bg-orange-500" :
+                            email.priority === "medium" ? "bg-amber-500" : "bg-blue-500"
+                          }`} />
+                          {email.priority}
+                        </span>
+                      )}
+
                       {/* Tags */}
-                      {email.tags.map((tag) => (
+                      {email.tags.filter((t) => t !== email.category).map((tag) => (
                         <span
                           key={tag}
                           className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-surface-elevated text-muted hover:text-foreground border border-surface-borderSubtle"

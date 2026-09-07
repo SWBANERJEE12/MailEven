@@ -52,6 +52,10 @@ export interface EmailData {
   tags: string[];
   briefingStatus: string;
   status: string;
+  category?: string;
+  priority?: "ignore" | "low" | "medium" | "high" | "critical";
+  personalizationReason?: string | null;
+  personalizationConfidence?: number | null;
   bodyPurgedAt?: string | Date | null;
 }
 
@@ -100,6 +104,12 @@ export default function EmailDetailModal({
   const [searchQueryInput, setSearchQueryInput] = useState("");
   const [researchError, setResearchError] = useState<string | null>(null);
 
+  // Personalization Priority & Feedback State
+  const [currentPriority, setCurrentPriority] = useState<string>("medium");
+  const [currentReason, setCurrentReason] = useState<string | null>(null);
+  const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
+  const [priorityFeedbackMsg, setPriorityFeedbackMsg] = useState<string | null>(null);
+
   // Reset states when email changes
   useEffect(() => {
     if (email) {
@@ -108,8 +118,40 @@ export default function EmailDetailModal({
       setResearchError(null);
       setSearchQueryInput("");
       setActionFeedback(null);
+      setCurrentPriority(email.priority || "medium");
+      setCurrentReason(email.personalizationReason || null);
+      setPriorityFeedbackMsg(null);
     }
-  }, [email?.id]);
+  }, [email?.id, email?.priority, email?.personalizationReason]);
+
+  const handlePriorityCorrection = async (newPriority: string) => {
+    if (!email || isUpdatingPriority || newPriority === currentPriority) return;
+    setIsUpdatingPriority(true);
+    setPriorityFeedbackMsg(null);
+
+    try {
+      const res = await fetch(`/api/emails/${email.id}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          correctedPriority: newPriority,
+          reason: `Manually set to ${newPriority} priority.`,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to record priority correction.");
+
+      const data = await res.json();
+      setCurrentPriority(newPriority);
+      setCurrentReason(`Learned from your feedback: set to ${newPriority}.`);
+      setPriorityFeedbackMsg(`AI updated! ${email.category || "Similar"} emails will now be prioritized as ${newPriority}.`);
+      if (onActionComplete) onActionComplete();
+    } catch (err: any) {
+      alert("Error updating priority: " + err.message);
+    } finally {
+      setIsUpdatingPriority(false);
+    }
+  };
 
   if (!email) return null;
 
@@ -222,7 +264,12 @@ export default function EmailDetailModal({
           <div className="flex-1 min-w-0">
             {/* Badges row with tactile styling */}
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              {email.tags.map((tag) => (
+              {email.category && (
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/25">
+                  {email.category}
+                </span>
+              )}
+              {email.tags.filter((t) => t !== email.category).map((tag) => (
                 <span
                   key={tag}
                   className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-surface-base text-muted border border-surface-borderSubtle"
@@ -243,6 +290,33 @@ export default function EmailDetailModal({
                   )}
                 </span>
               )}
+
+              {/* Interactive Priority Selector */}
+              <div className="flex items-center gap-1 ml-auto bg-surface-base border border-surface-borderSubtle rounded-lg p-0.5">
+                <span className="text-[10px] font-mono text-muted uppercase px-1.5">Priority:</span>
+                {(["low", "medium", "high", "critical"] as const).map((p) => {
+                  const isSelected = currentPriority === p;
+                  const colorMap: Record<string, string> = {
+                    low: isSelected ? "bg-blue-500/20 text-blue-400 border-blue-500/40" : "text-muted hover:text-foreground",
+                    medium: isSelected ? "bg-amber-500/20 text-amber-400 border-amber-500/40" : "text-muted hover:text-foreground",
+                    high: isSelected ? "bg-orange-500/20 text-orange-400 border-orange-500/40" : "text-muted hover:text-foreground",
+                    critical: isSelected ? "bg-red-500/20 text-red-400 border-red-500/40" : "text-muted hover:text-foreground",
+                  };
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => handlePriorityCorrection(p)}
+                      disabled={isUpdatingPriority}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded border transition-all capitalize ${
+                        isSelected ? colorMap[p] : "border-transparent text-muted hover:bg-surface-elevated"
+                      }`}
+                      title={`Train AI: Mark as ${p} priority`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <h2 className="text-base sm:text-lg font-bold text-foreground leading-snug break-words">
@@ -312,10 +386,39 @@ export default function EmailDetailModal({
           {modalTab === "details" ? (
             /* TAB 1: MESSAGE DETAILS & AI SUMMARY */
             <>
+              {/* Priority & Personalization Explainability Card */}
+              {currentReason && (
+                <div className="p-3.5 rounded-xl bg-accent/5 border border-accent/20 flex items-start gap-3">
+                  <div className="p-1.5 rounded-lg bg-accent/15 text-accent mt-0.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-accent">
+                        Personalized Priority: {currentPriority}
+                      </span>
+                      {email.personalizationConfidence && (
+                        <span className="text-[10px] font-mono text-muted bg-surface-base px-1.5 py-0.2 rounded border border-surface-borderSubtle">
+                          {Math.round(email.personalizationConfidence * 100)}% match
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-foreground/80 leading-relaxed font-sans">
+                      {currentReason}
+                    </p>
+                    {priorityFeedbackMsg && (
+                      <p className="text-xs text-emerald-500 font-medium mt-1">
+                        ✓ {priorityFeedbackMsg}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Executive Summary Card (Tactile editorial note style) */}
               <div className="p-4 rounded-xl bg-surface-elevated border border-surface-border relative overflow-hidden">
                 <div className="flex items-center gap-2 mb-2 text-xs font-mono font-bold text-accent uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <FileText className="w-3.5 h-3.5" />
                   <span>Executive Summary</span>
                 </div>
                 <p className="text-sm text-foreground/90 font-medium leading-relaxed">
