@@ -1,8 +1,6 @@
 node_modules/
 .next/
 *.tsbuildinfo
-.env*.local
-.env
-*.db
-*.db-journal
+.env.local
 prisma/*.db
+.env
