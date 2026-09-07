@@ -143,7 +143,10 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, account, user, profile }) {
-      if (user) {
+      // Credentials users already carry the MailEven database ID. Google provider
+      // users carry Google's providerAccountId, which must never be used as a
+      // foreign key for our User table.
+      if (user && account?.provider !== "google") {
         token.userId = user.id;
         token.isDemo = (user as any).isDemo ?? false;
       }
@@ -168,33 +171,32 @@ export const authOptions: NextAuthOptions = {
         const encryptedRefresh = encryptToken(account.refresh_token);
 
         try {
-          // If the user was not already logged in, find or create the primary User
-          let userId = token.userId as string | undefined;
-          if (!userId) {
-            const dbUser = await prisma.user.upsert({
-              where: { email: accountEmail! },
-              update: {
-                name: accountName,
-                image: accountAvatar,
-                accessToken: encryptedAccess,
-                refreshToken: encryptedRefresh ?? undefined,
-                tokenExpiry: account.expires_at ? new Date(account.expires_at * 1000) : undefined,
-                isDemo: false,
-              },
-              create: {
-                email: accountEmail!,
-                name: accountName,
-                image: accountAvatar,
-                googleId: account.providerAccountId,
-                accessToken: encryptedAccess,
-                refreshToken: encryptedRefresh,
-                tokenExpiry: account.expires_at ? new Date(account.expires_at * 1000) : undefined,
-                isDemo: false,
-              },
-            });
-            userId = dbUser.id;
-            token.userId = userId;
-          }
+          // Always resolve the primary MailEven user by email. On first Google
+          // sign-in, `user.id` is Google's provider ID, not our database ID.
+          const dbUser = await prisma.user.upsert({
+            where: { email: accountEmail! },
+            update: {
+              name: accountName,
+              image: accountAvatar,
+              accessToken: encryptedAccess,
+              refreshToken: encryptedRefresh ?? undefined,
+              tokenExpiry: account.expires_at ? new Date(account.expires_at * 1000) : undefined,
+              isDemo: false,
+            },
+            create: {
+              email: accountEmail!,
+              name: accountName,
+              image: accountAvatar,
+              googleId: account.providerAccountId,
+              accessToken: encryptedAccess,
+              refreshToken: encryptedRefresh,
+              tokenExpiry: account.expires_at ? new Date(account.expires_at * 1000) : undefined,
+              isDemo: false,
+            },
+          });
+          const userId = dbUser.id;
+          token.userId = userId;
+          token.isDemo = false;
 
           // Check existing connected accounts count for this user
           const existingCount = await prisma.connectedAccount.count({
