@@ -1,5 +1,35 @@
+export interface DemoAccountConfig {
+  id: string;
+  email: string;
+  name: string;
+  initials: string;
+  color: string;
+  isPrimary: boolean;
+}
+
+export const DEMO_ACCOUNTS: DemoAccountConfig[] = [
+  {
+    id: "demo_acc_work",
+    email: "alex.chen@workplace.com",
+    name: "Alex Chen (Work)",
+    initials: "AC",
+    color: "#4F6B6E", // Steel Teal
+    isPrimary: true,
+  },
+  {
+    id: "demo_acc_personal",
+    email: "alex.personal@gmail.com",
+    name: "Alex Chen (Personal)",
+    initials: "AP",
+    color: "#918578", // Star Dust
+    isPrimary: false,
+  },
+];
+
 export interface MockEmailData {
   id: string;
+  accountId: string;
+  accountEmail: string;
   sender: string;
   senderName: string;
   recipient: string;
@@ -31,9 +61,11 @@ export interface MockEmailData {
 export const INITIAL_MOCK_EMAILS: MockEmailData[] = [
   {
     id: "mock_email_1",
+    accountId: "demo_acc_work",
+    accountEmail: "alex.chen@workplace.com",
     sender: "elena.rostova@acmeventures.com",
     senderName: "Elena Rostova",
-    recipient: "user@maileven.ai",
+    recipient: "alex.chen@workplace.com",
     subject: "Q3 Strategy & Product Roadmap Alignment",
     snippet: "Hi team, let's lock in our Q3 planning session for tomorrow at 2:00 PM EST via Google Meet...",
     bodyText: `Hi Alex,
@@ -53,13 +85,13 @@ Please let me know if this slot works or if you prefer an earlier morning time.
 Best regards,
 Elena Rostova
 Partner, Acme Ventures`,
-    receivedAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(), // 35 mins ago
+    receivedAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(), // 25 mins ago
     summary: "Elena requested a 1-hour Q3 Product Roadmap alignment meeting tomorrow at 2:00 PM EST via Google Meet to finalize hiring and AI benchmarks before the offsite.",
     isActionable: true,
     actionType: "event",
     eventProposal: {
       title: "Q3 Strategy & Product Roadmap Alignment",
-      startTime: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(), // Tomorrow same time
+      startTime: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
       endTime: new Date(Date.now() + 1000 * 60 * 60 * 25).toISOString(),
       location: "Google Meet (https://meet.google.com/xyz-maileven-sync)",
       description: "Q3 planning session with Elena Rostova (Acme Ventures) covering AI latency, conversion metrics, and hiring roadmap.",
@@ -69,46 +101,12 @@ Partner, Acme Ventures`,
     briefingStatus: "pending",
   },
   {
-    id: "mock_email_2",
-    sender: "security-alerts@cloudscale.io",
-    senderName: "CloudScale Security Ops",
-    recipient: "user@maileven.ai",
-    subject: "URGENT: Annual SOC-2 Security Audit Attestation due Thursday",
-    snippet: "Action required: Complete your department's vendor risk sign-off and access control review by Thursday 5:00 PM...",
-    bodyText: `PRIORITY NOTICE: ANNUAL COMPLIANCE AUDIT
-
-Alex,
-
-The external auditors for our SOC-2 Type II attestation have requested sign-off on your department's cryptographic key rotation policies and third-party API permission scopes.
-
-Action Items:
-1. Log into audit portal: https://security.cloudscale.io/audits/2026-soc2
-2. Review the Google OAuth scopes requested for MailEven (Gmail readonly, Calendar, Tasks)
-3. Provide your cryptographic sign-off before Thursday, September 10 at 5:00 PM EST.
-
-Failure to complete this by the cutoff will flag a control deficiency on our public compliance report.
-
-Security Compliance Office
-CloudScale Inc.`,
-    receivedAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2 hours ago
-    summary: "Mandatory SOC-2 Type II audit review requires completing API scope verification and cryptographic sign-off before Thursday 5:00 PM EST.",
-    isActionable: true,
-    actionType: "task",
-    eventProposal: null,
-    taskProposal: {
-      title: "Complete SOC-2 Security Audit & API Scope Sign-off",
-      dueDate: new Date(Date.now() + 1000 * 60 * 60 * 72).toISOString(),
-      notes: "Log into https://security.cloudscale.io/audits/2026-soc2 and review Google OAuth scopes for MailEven before Thursday deadline.",
-      priority: "high",
-    },
-    tags: ["Work", "Urgent"],
-    briefingStatus: "pending",
-  },
-  {
     id: "mock_email_3",
+    accountId: "demo_acc_personal",
+    accountEmail: "alex.personal@gmail.com",
     sender: "ticket-confirmations@delta.com",
     senderName: "Delta Air Lines",
-    recipient: "user@maileven.ai",
+    recipient: "alex.personal@gmail.com",
     subject: "Your Flight Confirmation: SFO to JFK (Conf: #H7X9W2)",
     snippet: "Here is your electronic receipt and itinerary for Flight DL 1482 departing San Francisco at 8:30 AM...",
     bodyText: `Delta Air Lines Booking Confirmation
@@ -127,7 +125,7 @@ Carry-on: 1 personal item + 1 carry-on bag included.
 Please arrive at SFO Terminal 2 at least 90 minutes prior to departure.
 
 Manage your reservation online or through the Fly Delta mobile app.`,
-    receivedAt: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
+    receivedAt: new Date(Date.now() - 1000 * 60 * 55).toISOString(), // 55 mins ago
     summary: "Confirmed flight booking DL 1482 departing SFO Terminal 2 on Friday at 8:30 AM PST, arriving JFK at 5:15 PM EST (Confirmation: #H7X9W2).",
     isActionable: true,
     actionType: "event",
@@ -143,10 +141,84 @@ Manage your reservation online or through the Fly Delta mobile app.`,
     briefingStatus: "pending",
   },
   {
+    id: "mock_email_2",
+    accountId: "demo_acc_work",
+    accountEmail: "alex.chen@workplace.com",
+    sender: "security-alerts@cloudscale.io",
+    senderName: "CloudScale Security Ops",
+    recipient: "alex.chen@workplace.com",
+    subject: "URGENT: Annual SOC-2 Security Audit Attestation due Thursday",
+    snippet: "Action required: Complete your department's vendor risk sign-off and access control review by Thursday 5:00 PM...",
+    bodyText: `PRIORITY NOTICE: ANNUAL COMPLIANCE AUDIT
+
+Alex,
+
+The external auditors for our SOC-2 Type II attestation have requested sign-off on your department's cryptographic key rotation policies and third-party API permission scopes.
+
+Action Items:
+1. Log into audit portal: https://security.cloudscale.io/audits/2026-soc2
+2. Review the Google OAuth scopes requested for MailEven (Gmail readonly, Calendar, Tasks)
+3. Provide your cryptographic sign-off before Thursday, September 10 at 5:00 PM EST.
+
+Failure to complete this by the cutoff will flag a control deficiency on our public compliance report.
+
+Security Compliance Office
+CloudScale Inc.`,
+    receivedAt: new Date(Date.now() - 1000 * 60 * 110).toISOString(),
+    summary: "Mandatory SOC-2 Type II audit review requires completing API scope verification and cryptographic sign-off before Thursday 5:00 PM EST.",
+    isActionable: true,
+    actionType: "task",
+    eventProposal: null,
+    taskProposal: {
+      title: "Complete SOC-2 Security Audit & API Scope Sign-off",
+      dueDate: new Date(Date.now() + 1000 * 60 * 60 * 72).toISOString(),
+      notes: "Log into https://security.cloudscale.io/audits/2026-soc2 and review Google OAuth scopes for MailEven before Thursday deadline.",
+      priority: "high",
+    },
+    tags: ["Work", "Urgent"],
+    briefingStatus: "pending",
+  },
+  {
+    id: "mock_email_7",
+    accountId: "demo_acc_personal",
+    accountEmail: "alex.personal@gmail.com",
+    sender: "sarah.chen91@gmail.com",
+    senderName: "Sarah Chen",
+    recipient: "alex.personal@gmail.com",
+    subject: "Sunday Family Dinner & Dad's 60th Birthday Surprise!",
+    snippet: "Hey! We are organizing Dad's surprise dinner this Sunday at 6:30 PM at Osteria del Sol...",
+    bodyText: `Hey Alex!
+
+Don't forget — Dad's 60th birthday surprise dinner is this Sunday!
+We booked the private garden patio at Osteria del Sol (1420 Columbus Ave).
+
+Time: Sunday at 6:30 PM (arrive by 6:15 PM so we are all seated before Mom brings him in!).
+Can you bring the photo album we put together? Also let me know if you want to split the cake cost.
+
+Can't wait to see you!
+Sarah`,
+    receivedAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+    summary: "Family gathering for Dad's 60th birthday surprise dinner this Sunday at 6:30 PM at Osteria del Sol (arrive by 6:15 PM). Bring the photo album.",
+    isActionable: true,
+    actionType: "event",
+    eventProposal: {
+      title: "Dad's 60th Birthday Surprise Dinner",
+      startTime: new Date(Date.now() + 1000 * 60 * 60 * 140).toISOString(),
+      endTime: new Date(Date.now() + 1000 * 60 * 60 * 143).toISOString(),
+      location: "Osteria del Sol (1420 Columbus Ave)",
+      description: "Surprise dinner party for Dad. Arrive by 6:15 PM before Dad arrives. Bring photo album.",
+    },
+    taskProposal: null,
+    tags: ["Personal"],
+    briefingStatus: "pending",
+  },
+  {
     id: "mock_email_4",
+    accountId: "demo_acc_work",
+    accountEmail: "alex.chen@workplace.com",
     sender: "billing@aws.amazon.com",
     senderName: "Amazon Web Services",
-    recipient: "user@maileven.ai",
+    recipient: "alex.chen@workplace.com",
     subject: "Amazon Web Services Invoice #91823901 Available",
     snippet: "Your AWS monthly invoice of $142.80 for account ending in 4920 is now ready for review...",
     bodyText: `Dear AWS Customer,
@@ -164,7 +236,7 @@ Breakdown by service:
 - Amazon S3 & Data Transfer: $30.10
 
 View PDF invoice in AWS Billing Console: https://console.aws.amazon.com/billing`,
-    receivedAt: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
+    receivedAt: new Date(Date.now() - 1000 * 60 * 300).toISOString(),
     summary: "AWS monthly bill for August is $142.80 USD, scheduled for automatic charge on Sept 15 via Mastercard ending in 9102.",
     isActionable: true,
     actionType: "task",
@@ -179,10 +251,48 @@ View PDF invoice in AWS Billing Console: https://console.aws.amazon.com/billing`
     briefingStatus: "pending",
   },
   {
+    id: "mock_email_8",
+    accountId: "demo_acc_personal",
+    accountEmail: "alex.personal@gmail.com",
+    sender: "care@baydentalhealth.com",
+    senderName: "Bay Dental Health",
+    recipient: "alex.personal@gmail.com",
+    subject: "Appointment Reminder: Semi-annual Dental Cleaning on Wednesday",
+    snippet: "Dr. Reyes is looking forward to seeing you this Wednesday, September 9 at 10:00 AM...",
+    bodyText: `Bay Dental Health
+
+Hi Alex,
+
+This is a confirmation reminder for your upcoming semi-annual prophylaxis and examination with Dr. Reyes.
+
+Date: Wednesday, September 9, 2026
+Time: 10:00 AM - 10:45 AM PST
+Location: 450 Sutter St #1200, San Francisco, CA 94108
+
+Please notify us 24 hours in advance if you need to reschedule.
+Parking validation available in the Sutter-Stockton garage.`,
+    receivedAt: new Date(Date.now() - 1000 * 60 * 420).toISOString(),
+    summary: "Dental examination and cleaning with Dr. Reyes confirmed for Wednesday at 10:00 AM PST at 450 Sutter St.",
+    isActionable: true,
+    actionType: "event",
+    eventProposal: {
+      title: "Dental Examination & Cleaning (Dr. Reyes)",
+      startTime: new Date(Date.now() + 1000 * 60 * 60 * 48).toISOString(),
+      endTime: new Date(Date.now() + 1000 * 60 * 60 * 49).toISOString(),
+      location: "450 Sutter St #1200, San Francisco, CA",
+      description: "Semi-annual prophylaxis and examination with Dr. Reyes.",
+    },
+    taskProposal: null,
+    tags: ["Personal"],
+    briefingStatus: "pending",
+  },
+  {
     id: "mock_email_5",
+    accountId: "demo_acc_personal",
+    accountEmail: "alex.personal@gmail.com",
     sender: "digest@tldr.tech",
     senderName: "TLDR Tech",
-    recipient: "user@maileven.ai",
+    recipient: "alex.personal@gmail.com",
     subject: "TLDR Tech: The Rise of Real-Time Agentic Workflows",
     snippet: "Big tech unveils unified multimodal reasoning APIs, browser use capabilities expand, and open-source models hit new benchmarks...",
     bodyText: `TLDR Tech — Daily Roundup for Engineers & Founders
@@ -198,7 +308,7 @@ Autonomous coding agents are moving from text chat to full-blown environment con
 Simplify your cloud deployments with Zero-Config infrastructure.
 
 To manage subscription preferences or unsubscribe, click here.`,
-    receivedAt: new Date(Date.now() - 1000 * 60 * 500).toISOString(),
+    receivedAt: new Date(Date.now() - 1000 * 60 * 550).toISOString(),
     summary: "Daily tech newsletter featuring advancements in autonomous agentic workflows, API latency benchmarks, and Next.js server performance tips.",
     isActionable: false,
     actionType: "none",
@@ -209,9 +319,11 @@ To manage subscription preferences or unsubscribe, click here.`,
   },
   {
     id: "mock_email_6",
+    accountId: "demo_acc_personal",
+    accountEmail: "alex.personal@gmail.com",
     sender: "deals@gearpatrol.com",
     senderName: "Gear Patrol Store",
-    recipient: "user@maileven.ai",
+    recipient: "alex.personal@gmail.com",
     subject: "Flash Sale: Up to 40% off Minimalist Desk Setups & Monitors",
     snippet: "Exclusive member access: 40% discount on ergonomic standing desks, mechanical keyboards, and 4K displays...",
     bodyText: `Gear Patrol Members Exclusive:
@@ -223,7 +335,7 @@ Upgrade your workspace with our curated productivity collection.
 
 Use checkout code: ELEVATE26
 Sale ends midnight tonight. Free shipping on all orders over $75.`,
-    receivedAt: new Date(Date.now() - 1000 * 60 * 700).toISOString(),
+    receivedAt: new Date(Date.now() - 1000 * 60 * 720).toISOString(),
     summary: "Promotional flash sale offering up to 40% off desks and desk accessories using code ELEVATE26 through midnight tonight.",
     isActionable: false,
     actionType: "none",
@@ -231,37 +343,5 @@ Sale ends midnight tonight. Free shipping on all orders over $75.`,
     taskProposal: null,
     tags: ["Promotions"],
     briefingStatus: "dismissed",
-  },
-  {
-    id: "mock_email_7",
-    sender: "sarah.chen91@gmail.com",
-    senderName: "Sarah Chen",
-    recipient: "user@maileven.ai",
-    subject: "Sunday Family Dinner & Dad's 60th Birthday Surprise!",
-    snippet: "Hey! We are organizing Dad's surprise dinner this Sunday at 6:30 PM at Osteria del Sol...",
-    bodyText: `Hey Alex!
-
-Don't forget — Dad's 60th birthday surprise dinner is this Sunday!
-We booked the private garden patio at Osteria del Sol (1420 Columbus Ave).
-
-Time: Sunday at 6:30 PM (arrive by 6:15 PM so we are all seated before Mom brings him in!).
-Can you bring the photo album we put together? Also let me know if you want to split the cake cost.
-
-Can't wait to see you!
-Sarah`,
-    receivedAt: new Date(Date.now() - 1000 * 60 * 900).toISOString(),
-    summary: "Family gathering for Dad's 60th birthday surprise dinner this Sunday at 6:30 PM at Osteria del Sol (arrive by 6:15 PM). Bring the photo album.",
-    isActionable: true,
-    actionType: "event",
-    eventProposal: {
-      title: "Dad's 60th Birthday Surprise Dinner",
-      startTime: new Date(Date.now() + 1000 * 60 * 60 * 140).toISOString(),
-      endTime: new Date(Date.now() + 1000 * 60 * 60 * 143).toISOString(),
-      location: "Osteria del Sol (1420 Columbus Ave)",
-      description: "Surprise dinner party for Dad. Arrive by 6:15 PM before Dad arrives. Bring photo album.",
-    },
-    taskProposal: null,
-    tags: ["Personal"],
-    briefingStatus: "pending",
   },
 ];

@@ -3,9 +3,41 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --foreground: #EDEDED;
-  --accent: #FE4401;
+  /* Default / Light Mode: Main #E5E5E5, Accent #6E473B */
+  --background: #E5E5E5;
+  --foreground: #2B2523;
+  --surface-base: #DAD6CE;
+  --surface-card: #FFFFFF;
+  --surface-elevated: #F3F1ED;
+  --surface-highlight: #EAE6E1;
+  --surface-border: #D4D0C8;
+  --surface-border-subtle: #DDD9D2;
+  --accent: #6E473B;
+  --accent-hover: #57352B;
+  --accent-light: rgba(110, 71, 59, 0.12);
+  --accent-border: rgba(110, 71, 59, 0.35);
+  --muted: #756C66;
+  --muted-light: #5A524D;
+  --muted-dark: #38322E;
+}
+
+.dark {
+  /* Dark Mode: Main #4C4C4C, Accent #A78D78 */
+  --background: #4C4C4C;
+  --foreground: #F5F3EF;
+  --surface-base: #3E3E3E;
+  --surface-card: #383838;
+  --surface-elevated: #424242;
+  --surface-highlight: #4E4E4E;
+  --surface-border: #5A5A5A;
+  --surface-border-subtle: #505050;
+  --accent: #A78D78;
+  --accent-hover: #BCA38E;
+  --accent-light: rgba(167, 141, 120, 0.20);
+  --accent-border: rgba(167, 141, 120, 0.45);
+  --muted: #B8B4AE;
+  --muted-light: #D4D1CB;
+  --muted-dark: #8C8882;
 }
 
 body {
@@ -15,35 +47,35 @@ body {
   overflow-x: hidden;
 }
 
-/* Custom minimal scrollbar */
+/* Minimal Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: var(--surface-base);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #262626;
+  background: var(--surface-border);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #383838;
+  background: var(--muted);
 }
 
-/* Accent selection */
+/* Selection */
 ::selection {
-  background-color: #FE4401;
+  background-color: var(--accent);
   color: #FFFFFF;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.98);
+    transform: scale(0.985);
   }
   to {
     opacity: 1;

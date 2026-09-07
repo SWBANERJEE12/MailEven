@@ -1,16 +1,21 @@
 import { google } from "googleapis";
+import { decryptToken } from "./crypto";
 
-export function getGoogleOAuthClient(accessToken?: string, refreshToken?: string) {
+export function getGoogleOAuthClient(accessToken?: string | null, refreshToken?: string | null) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/callback/google`;
 
   const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 
-  if (accessToken || refreshToken) {
+  // Decrypt tokens if encrypted
+  const plainAccess = accessToken ? decryptToken(accessToken) || accessToken : undefined;
+  const plainRefresh = refreshToken ? decryptToken(refreshToken) || refreshToken : undefined;
+
+  if (plainAccess || plainRefresh) {
     oauth2Client.setCredentials({
-      access_token: accessToken,
-      refresh_token: refreshToken,
+      access_token: plainAccess,
+      refresh_token: plainRefresh,
     });
   }
 
@@ -66,12 +71,10 @@ export async function fetchRecentGmailMessages(
       const dateHeader = getHeader("Date");
       const receivedAt = dateHeader ? new Date(dateHeader) : new Date();
 
-      // Extract sender display name and email address
       const senderMatch = fromHeader.match(/^(.*?)\s*<(.+?)>$/);
       const senderName = senderMatch ? senderMatch[1].replace(/["']/g, "").trim() : fromHeader;
       const sender = senderMatch ? senderMatch[2].trim() : fromHeader;
 
-      // Extract body
       let bodyText = "";
       let bodyHtml = "";
 
@@ -111,6 +114,58 @@ export async function fetchRecentGmailMessages(
   return parsedMessages;
 }
 
+export interface GoogleCalendarItem {
+  id: string;
+  summary: string;
+  primary?: boolean;
+}
+
+export async function fetchGoogleCalendarLists(
+  accessToken: string,
+  refreshToken?: string
+): Promise<GoogleCalendarItem[]> {
+  try {
+    const auth = getGoogleOAuthClient(accessToken, refreshToken);
+    const calendar = google.calendar({ version: "v3", auth });
+    const res = await calendar.calendarList.list({ minAccessRole: "writer" });
+
+    const items = res.data.items || [];
+    return items.map((item) => ({
+      id: item.id || "primary",
+      summary: item.summary || "Calendar",
+      primary: Boolean(item.primary),
+    }));
+  } catch (err) {
+    console.warn("fetchGoogleCalendarLists error:", err);
+    return [{ id: "primary", summary: "Primary Calendar", primary: true }];
+  }
+}
+
+export interface GoogleTaskListItem {
+  id: string;
+  title: string;
+}
+
+export async function fetchGoogleTaskLists(
+  accessToken: string,
+  refreshToken?: string
+): Promise<GoogleTaskListItem[]> {
+  try {
+    const auth = getGoogleOAuthClient(accessToken, refreshToken);
+    const tasksService = google.tasks({ version: "v1", auth });
+    const res = await tasksService.tasklists.list();
+
+    const items = res.data.items || [];
+    return items.map((item) => ({
+      id: item.id || "@default",
+      title: item.title || "Default Tasks",
+    }));
+  } catch (err) {
+    console.warn("fetchGoogleTaskLists error:", err);
+    return [{ id: "@default", title: "Default Tasks" }];
+  }
+}
+
 export async function createGoogleCalendarEvent(
   accessToken: string,
   refreshToken: string | undefined,
@@ -120,13 +175,14 @@ export async function createGoogleCalendarEvent(
     location?: string;
     startTime: string; // ISO string
     endTime: string;   // ISO string
+    calendarId?: string;
   }
 ) {
   const auth = getGoogleOAuthClient(accessToken, refreshToken);
   const calendar = google.calendar({ version: "v3", auth });
 
   const res = await calendar.events.insert({
-    calendarId: "primary",
+    calendarId: event.calendarId || "primary",
     requestBody: {
       summary: event.title,
       description: event.description,
@@ -153,13 +209,14 @@ export async function createGoogleTaskItem(
     title: string;
     notes?: string;
     due?: string; // ISO string or YYYY-MM-DD
+    taskListId?: string;
   }
 ) {
   const auth = getGoogleOAuthClient(accessToken, refreshToken);
   const tasksService = google.tasks({ version: "v1", auth });
 
   const res = await tasksService.tasks.insert({
-    tasklist: "@default",
+    tasklist: task.taskListId || "@default",
     requestBody: {
       title: task.title,
       notes: task.notes,
@@ -170,4 +227,21 @@ export async function createGoogleTaskItem(
   return {
     googleTaskId: res.data.id,
   };
+}
+
+/**
+ * Revokes an OAuth token directly with Google OAuth2 revocation endpoint.
+ */
+export async function revokeGoogleToken(token: string): Promise<boolean> {
+  const plainToken = decryptToken(token) || token;
+  try {
+    const res = await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(plainToken)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn("revokeGoogleToken network error:", err);
+    return false;
+  }
 }

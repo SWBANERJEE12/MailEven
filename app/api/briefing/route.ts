@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { validateRequestOrigin, invalidOriginResponse } from "@/lib/security";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -10,13 +11,36 @@ export async function GET(req: NextRequest) {
   }
 
   const userId = (session.user as any).id;
+  const { searchParams } = new URL(req.url);
+  const accountId = searchParams.get("accountId");
 
   try {
+    const whereClause: any = {
+      userId,
+      isActionable: true,
+      briefingStatus: "pending",
+    };
+
+    if (accountId && accountId !== "all") {
+      whereClause.OR = [
+        { connectedAccountId: accountId },
+        { accountEmail: accountId },
+      ];
+    }
+
     const briefingEmails = await prisma.email.findMany({
-      where: {
-        userId,
-        isActionable: true,
-        briefingStatus: "pending",
+      where: whereClause,
+      include: {
+        connectedAccount: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            initials: true,
+            color: true,
+            isPrimary: true,
+          },
+        },
       },
       orderBy: {
         receivedAt: "desc",
@@ -37,16 +61,30 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!validateRequestOrigin(req)) {
+    return invalidOriginResponse();
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const userId = (session.user as any).id;
 
   try {
     const { emailId, action } = await req.json();
 
     if (!emailId || !["dismiss", "interested"].includes(action)) {
       return NextResponse.json({ error: "Invalid parameters" }, { status: 400 });
+    }
+
+    const email = await prisma.email.findFirst({
+      where: { id: emailId, userId },
+    });
+
+    if (!email) {
+      return NextResponse.json({ error: "Email not found" }, { status: 404 });
     }
 
     const updated = await prisma.email.update({

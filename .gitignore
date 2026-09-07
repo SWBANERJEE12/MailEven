@@ -2,4 +2,7 @@ node_modules/
 .next/
 *.tsbuildinfo
 .env*.local
+.env
+*.db
+*.db-journal
 prisma/*.db

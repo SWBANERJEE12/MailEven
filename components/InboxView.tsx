@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Sparkles,
   Calendar,
@@ -8,25 +8,12 @@ import {
   ExternalLink,
   Archive,
   ArchiveRestore,
-  Filter,
-  Clock,
-  User,
   CheckCircle2,
   Inbox,
+  User,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { EmailData } from "./EmailDetailModal";
-
-const AVAILABLE_TAGS = [
-  "All",
-  "Urgent",
-  "Work",
-  "Personal",
-  "Finance",
-  "Travel",
-  "Newsletters",
-  "Promotions",
-];
 
 interface InboxViewProps {
   emails: EmailData[];
@@ -43,7 +30,6 @@ interface InboxViewProps {
 export default function InboxView({
   emails,
   selectedTag,
-  setSelectedTag,
   statusFilter,
   setStatusFilter,
   onOpenEmail,
@@ -52,37 +38,30 @@ export default function InboxView({
   onAddTask,
 }: InboxViewProps) {
   return (
-    <div className="space-y-6">
-      {/* Top Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Tag Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-          {AVAILABLE_TAGS.map((tag) => {
-            const isSelected = selectedTag === tag;
-            return (
-              <button
-                key={tag}
-                onClick={() => setSelectedTag(tag)}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
-                  isSelected
-                    ? "bg-accent text-white shadow-sm shadow-accent/25"
-                    : "bg-surface-card hover:bg-surface-elevated text-muted-light hover:text-white border border-surface-border"
-                }`}
-              >
-                {tag}
-              </button>
-            );
-          })}
+    <div className="space-y-4">
+      {/* Top Controls: Active Filter Notice & Status Toggle (Tag filter moved to sidebar) */}
+      <div className="flex items-center justify-between gap-4 pb-2 border-b border-surface-borderSubtle">
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <span>Viewing:</span>
+          <span className="font-bold text-foreground">
+            {statusFilter === "inbox" ? "Inbox" : "Archived Messages"}
+          </span>
+          {selectedTag !== "All" && (
+            <span className="px-2 py-0.5 rounded-full bg-surface-elevated border border-surface-border text-foreground font-semibold">
+              Tag: {selectedTag}
+            </span>
+          )}
+          <span className="text-[11px] text-muted">({emails.length} total)</span>
         </div>
 
-        {/* Status Filter (Inbox vs Archived) */}
-        <div className="flex items-center bg-surface-card p-1 rounded-xl border border-surface-border self-start sm:self-auto">
+        {/* Status Toggle: Inbox vs Archived */}
+        <div className="flex items-center bg-surface-elevated p-1 rounded-xl border border-surface-borderSubtle">
           <button
             onClick={() => setStatusFilter("inbox")}
             className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
               statusFilter === "inbox"
-                ? "bg-surface-elevated text-white shadow-sm"
-                : "text-muted hover:text-white"
+                ? "bg-surface-card text-foreground shadow-sm"
+                : "text-muted hover:text-foreground"
             }`}
           >
             Inbox
@@ -91,8 +70,8 @@ export default function InboxView({
             onClick={() => setStatusFilter("archived")}
             className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
               statusFilter === "archived"
-                ? "bg-surface-elevated text-white shadow-sm"
-                : "text-muted hover:text-white"
+                ? "bg-surface-card text-foreground shadow-sm"
+                : "text-muted hover:text-foreground"
             }`}
           >
             Archived
@@ -104,94 +83,108 @@ export default function InboxView({
       {emails.length === 0 ? (
         <div className="p-16 rounded-2xl bg-surface-card border border-surface-border text-center flex flex-col items-center">
           <Inbox className="w-12 h-12 text-muted/30 mb-3" />
-          <h3 className="text-base font-bold text-white">No emails found</h3>
-          <p className="text-xs text-muted-light mt-1 max-w-sm">
+          <h3 className="text-base font-bold text-foreground">No emails found</h3>
+          <p className="text-xs text-muted mt-1 max-w-sm leading-relaxed">
             {selectedTag !== "All"
-              ? `No messages tagged "${selectedTag}". Try switching tags or syncing mail.`
+              ? `No messages match tag "${selectedTag}". Select "All" in the sidebar or click Sync.`
               : statusFilter === "archived"
               ? "Your archive is currently empty."
               : "No emails in your inbox right now."}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3.5">
           {emails.map((email) => {
             const timeAgo = formatDistanceToNow(new Date(email.receivedAt), {
               addSuffix: true,
             });
 
+            const connectedAcc = (email as any).connectedAccount;
+            const accountEmail = (email as any).accountEmail || connectedAcc?.email;
+            const initials = connectedAcc?.initials || (accountEmail ? accountEmail.slice(0, 2).toUpperCase() : "AC");
+            const dotColor = connectedAcc?.color || (accountEmail?.includes("work") ? "#A78D78" : "#6E473B");
+
             return (
               <div
                 key={email.id}
-                className="p-5 rounded-2xl bg-surface-card border border-surface-border hover:border-accent/40 transition-all group flex flex-col justify-between relative shadow-lg shadow-black/40"
+                className="p-4 sm:p-5 rounded-2xl bg-surface-card border border-surface-border hover:border-accent/50 transition-all group flex flex-col justify-between relative shadow-sm"
               >
-                {/* Header Row */}
+                {/* Header Row: Badges, Account Indicator & Time */}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      {/* Account Indicator Badge */}
+                      <div
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold text-foreground bg-surface-elevated border border-surface-borderSubtle"
+                        title={`Received via ${accountEmail || "connected account"}`}
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: dotColor }}
+                        />
+                        <span>{initials}</span>
+                        {accountEmail && (
+                          <span className="hidden sm:inline text-muted font-normal text-[9px]">
+                            • {accountEmail.split("@")[1]}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Tags */}
                       {email.tags.map((tag) => (
                         <span
                           key={tag}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            tag === "Urgent"
-                              ? "bg-accent/20 text-accent border border-accent/30"
-                              : tag === "Work"
-                              ? "bg-blue-500/15 text-blue-400 border border-blue-500/25"
-                              : tag === "Finance"
-                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
-                              : tag === "Travel"
-                              ? "bg-purple-500/15 text-purple-400 border border-purple-500/25"
-                              : "bg-surface-elevated text-muted-light border border-surface-border"
-                          }`}
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-surface-elevated text-muted hover:text-foreground border border-surface-borderSubtle"
                         >
                           {tag}
                         </span>
                       ))}
 
+                      {/* Action Detection Pill */}
                       {email.isActionable && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30 flex items-center gap-1">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/25 flex items-center gap-1">
                           {email.actionType === "event" ? (
                             <>
-                              <Calendar className="w-2.5 h-2.5" /> Event Detected
+                              <Calendar className="w-2.5 h-2.5" /> Event Proposal
                             </>
                           ) : (
                             <>
-                              <CheckSquare className="w-2.5 h-2.5" /> Task Detected
+                              <CheckSquare className="w-2.5 h-2.5" /> Action Item
                             </>
                           )}
                         </span>
                       )}
 
                       {email.briefingStatus === "actioned" && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                          <CheckCircle2 className="w-2.5 h-2.5" /> Action Scheduled
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                          <CheckCircle2 className="w-2.5 h-2.5" /> Confirmed
                         </span>
                       )}
                     </div>
 
                     <h3
                       onClick={() => onOpenEmail(email)}
-                      className="text-base font-bold text-white group-hover:text-accent transition-colors cursor-pointer leading-snug"
+                      className="text-sm sm:text-base font-bold text-foreground group-hover:text-accent transition-colors cursor-pointer leading-snug"
                     >
                       {email.subject}
                     </h3>
 
                     <div className="flex items-center gap-2 mt-1 text-xs text-muted">
-                      <span className="text-white/90 font-medium">
+                      <span className="text-foreground/90 font-medium">
                         {email.senderName || email.sender}
                       </span>
                       <span>•</span>
-                      <span>{email.sender}</span>
+                      <span className="truncate max-w-[200px]">{email.sender}</span>
                       <span>•</span>
                       <span>{timeAgo}</span>
                     </div>
                   </div>
 
-                  {/* Top Right Quick Actions */}
-                  <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                  {/* Archive Toggle Button */}
+                  <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => onArchiveToggle(email.id, email.status)}
-                      className="p-2 text-muted hover:text-white hover:bg-surface-elevated rounded-xl transition-colors"
+                      className="p-1.5 text-muted hover:text-foreground hover:bg-surface-elevated rounded-lg transition-colors"
                       title={email.status === "archived" ? "Move to Inbox" : "Archive"}
                     >
                       {email.status === "archived" ? (
@@ -206,16 +199,16 @@ export default function InboxView({
                 {/* AI Executive Summary Card */}
                 <div
                   onClick={() => onOpenEmail(email)}
-                  className="mt-3.5 p-3.5 rounded-xl bg-surface-elevated/80 border border-surface-borderSubtle hover:border-accent/30 transition-colors cursor-pointer flex items-start gap-2.5"
+                  className="mt-3 p-3 rounded-xl bg-surface-elevated/70 border border-surface-borderSubtle hover:border-accent/30 transition-colors cursor-pointer flex items-start gap-2.5"
                 >
-                  <Sparkles className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+                  <Sparkles className="w-3.5 h-3.5 text-accent flex-shrink-0 mt-0.5" />
                   <p className="text-xs sm:text-sm text-foreground/90 font-normal leading-relaxed">
                     {email.summary}
                   </p>
                 </div>
 
-                {/* Bottom Row: View Original & Detected Action Trigger */}
-                <div className="mt-4 pt-3 border-t border-surface-borderSubtle flex flex-wrap items-center justify-between gap-2">
+                {/* Bottom Row: View original & Action Triggers */}
+                <div className="mt-3 pt-2.5 border-t border-surface-borderSubtle flex flex-wrap items-center justify-between gap-2">
                   <button
                     onClick={() => onOpenEmail(email)}
                     className="text-xs font-semibold text-accent hover:underline flex items-center gap-1"
@@ -228,7 +221,7 @@ export default function InboxView({
                     {email.actionType === "event" && email.eventProposal && (
                       <button
                         onClick={() => onScheduleEvent(email)}
-                        className="px-3 py-1.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold transition-colors shadow-sm shadow-accent/20 flex items-center gap-1.5"
+                        className="px-3 py-1.5 rounded-xl bg-accent text-white text-xs font-bold transition-all shadow-sm hover:opacity-90 flex items-center gap-1.5"
                       >
                         <Calendar className="w-3.5 h-3.5" />
                         <span>Schedule Event</span>
@@ -238,7 +231,7 @@ export default function InboxView({
                     {email.actionType === "task" && email.taskProposal && (
                       <button
                         onClick={() => onAddTask(email)}
-                        className="px-3 py-1.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold transition-colors shadow-sm shadow-accent/20 flex items-center gap-1.5"
+                        className="px-3 py-1.5 rounded-xl bg-accent text-white text-xs font-bold transition-all shadow-sm hover:opacity-90 flex items-center gap-1.5"
                       >
                         <CheckSquare className="w-3.5 h-3.5" />
                         <span>Add Task</span>

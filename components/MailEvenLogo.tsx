@@ -9,9 +9,9 @@ interface LogoProps {
 
 export default function MailEvenLogo({ className = "", size = 32, showText = true }: LogoProps) {
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
+    <div className={`flex items-center gap-2.5 select-none ${className}`}>
       <div
-        className="relative flex items-center justify-center rounded-xl overflow-hidden bg-surface-card p-1 border border-white/10"
+        className="relative flex items-center justify-center rounded-xl overflow-hidden bg-surface-card p-1 border border-surface-border shadow-sm"
         style={{ width: size, height: size }}
       >
         <Image
@@ -24,8 +24,8 @@ export default function MailEvenLogo({ className = "", size = 32, showText = tru
         />
       </div>
       {showText && (
-        <span className="font-bold tracking-tight text-white flex items-center text-lg">
-          Mail<span className="text-accent">Even</span>
+        <span className="font-bold tracking-tight text-foreground flex items-center text-base sm:text-lg">
+          Mail<span className="text-accent font-extrabold ml-0.5">Even</span>
         </span>
       )}
     </div>

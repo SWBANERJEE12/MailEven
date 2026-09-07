@@ -10,10 +10,8 @@ import {
   Check,
   CalendarCheck,
   Mail,
-  RotateCcw,
 } from "lucide-react";
 import { format } from "date-fns";
-import { EmailData } from "./EmailDetailModal";
 
 interface CalendarEventItem {
   id: string;
@@ -23,6 +21,7 @@ interface CalendarEventItem {
   startTime: string;
   endTime: string;
   htmlLink?: string | null;
+  calendarId?: string | null;
   email?: {
     id: string;
     subject: string;
@@ -38,6 +37,7 @@ interface TaskItemData {
   due?: string | null;
   status: string;
   isCompleted: boolean;
+  taskListId?: string | null;
   email?: {
     id: string;
     subject: string;
@@ -97,33 +97,33 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
       {/* View Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <CalendarCheck className="w-5 h-5 text-accent" />
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <CalendarCheck className="w-5 h-5 text-indigo dark:text-steelteal" />
             <span>Calendar & Tasks Hub</span>
           </h2>
-          <p className="text-xs text-muted-light mt-0.5">
-            Manage events and action items converted directly from email briefings.
+          <p className="text-xs text-muted mt-0.5">
+            Manage scheduled events and tasks created directly from email briefings.
           </p>
         </div>
 
-        {/* View Filter Pills */}
-        <div className="flex items-center gap-1 bg-surface-card p-1 rounded-xl border border-surface-border">
+        {/* View Filter Tabs */}
+        <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-xl border border-surface-borderSubtle">
           <button
             onClick={() => setActiveTab("all")}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               activeTab === "all"
-                ? "bg-accent text-white"
-                : "text-muted hover:text-white"
+                ? "bg-surface-card text-foreground shadow-sm"
+                : "text-muted hover:text-foreground"
             }`}
           >
-            All Actions ({events.length + tasks.length})
+            All ({events.length + tasks.length})
           </button>
           <button
             onClick={() => setActiveTab("events")}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               activeTab === "events"
-                ? "bg-accent text-white"
-                : "text-muted hover:text-white"
+                ? "bg-surface-card text-foreground shadow-sm"
+                : "text-muted hover:text-foreground"
             }`}
           >
             Calendar ({events.length})
@@ -132,8 +132,8 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
             onClick={() => setActiveTab("tasks")}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               activeTab === "tasks"
-                ? "bg-accent text-white"
-                : "text-muted hover:text-white"
+                ? "bg-surface-card text-foreground shadow-sm"
+                : "text-muted hover:text-foreground"
             }`}
           >
             Tasks ({tasks.length})
@@ -144,10 +144,10 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
       {isLoading ? (
         <div className="p-12 text-center text-muted text-xs">Loading scheduled items...</div>
       ) : events.length === 0 && tasks.length === 0 ? (
-        <div className="p-16 rounded-3xl bg-surface-card border border-surface-border text-center flex flex-col items-center">
+        <div className="p-16 rounded-3xl bg-surface-card border border-surface-border text-center flex flex-col items-center shadow-sm">
           <CalendarCheck className="w-12 h-12 text-muted/30 mb-3" />
-          <h3 className="text-base font-bold text-white">No actions scheduled yet</h3>
-          <p className="text-xs text-muted-light mt-1 max-w-sm">
+          <h3 className="text-base font-bold text-foreground">No actions scheduled yet</h3>
+          <p className="text-xs text-muted mt-1 max-w-sm">
             Review your Daily Briefing or tap "Schedule Event" / "Add Task" from any email card in your inbox.
           </p>
         </div>
@@ -157,9 +157,9 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
           {(activeTab === "all" || activeTab === "events") && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wide">
-                  <Calendar className="w-4 h-4 text-accent" />
-                  <span>Google Calendar Events</span>
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide">
+                  <Calendar className="w-4 h-4 text-indigo dark:text-steelteal" />
+                  <span>Calendar Events</span>
                 </h3>
                 <span className="text-xs text-muted font-medium">{events.length} events</span>
               </div>
@@ -173,15 +173,20 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
                   {events.map((ev) => (
                     <div
                       key={ev.id}
-                      className="p-4 rounded-2xl bg-surface-card border border-surface-border hover:border-accent/40 transition-all group"
+                      className="p-4 rounded-2xl bg-surface-card border border-surface-border hover:border-indigo/40 dark:hover:border-steelteal/40 transition-all group"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h4 className="text-sm font-bold text-white group-hover:text-accent transition-colors">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-surface-elevated text-muted">
+                              {ev.calendarId === "primary" ? "Primary Calendar" : ev.calendarId || "Calendar"}
+                            </span>
+                          </div>
+                          <h4 className="text-sm font-bold text-foreground group-hover:text-indigo dark:group-hover:text-steelteal transition-colors">
                             {ev.title}
                           </h4>
-                          <div className="flex items-center gap-2 text-xs text-muted-light mt-1">
-                            <Clock className="w-3.5 h-3.5 text-accent" />
+                          <div className="flex items-center gap-2 text-xs text-muted mt-1">
+                            <Clock className="w-3.5 h-3.5 text-indigo dark:text-steelteal" />
                             <span>{format(new Date(ev.startTime), "PPp")}</span>
                           </div>
                           {ev.location && (
@@ -197,7 +202,7 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
                             href={ev.htmlLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 text-accent hover:text-white hover:bg-accent/20 rounded-xl transition-colors"
+                            className="p-2 text-indigo dark:text-steelteal hover:bg-surface-elevated rounded-xl transition-colors"
                             title="Open in Google Calendar"
                           >
                             <ExternalLink className="w-4 h-4" />
@@ -210,9 +215,9 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
                         <div className="mt-3 pt-2.5 border-t border-surface-borderSubtle flex items-center justify-between text-xs">
                           <button
                             onClick={() => onSelectEmailById(ev.email!.id)}
-                            className="text-muted hover:text-accent flex items-center gap-1.5 truncate max-w-sm transition-colors"
+                            className="text-muted hover:text-indigo dark:hover:text-steelteal flex items-center gap-1.5 truncate max-w-sm transition-colors"
                           >
-                            <Mail className="w-3 h-3 text-accent flex-shrink-0" />
+                            <Mail className="w-3 h-3 text-indigo dark:text-steelteal flex-shrink-0" />
                             <span className="truncate">{ev.email.subject}</span>
                           </button>
                           <span className="text-[10px] text-muted">Source Email</span>
@@ -229,9 +234,9 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
           {(activeTab === "all" || activeTab === "tasks") && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wide">
-                  <CheckSquare className="w-4 h-4 text-accent" />
-                  <span>Google Tasks</span>
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide">
+                  <CheckSquare className="w-4 h-4 text-indigo dark:text-steelteal" />
+                  <span>Tasks</span>
                 </h3>
                 <span className="text-xs text-muted font-medium">{tasks.length} tasks</span>
               </div>
@@ -248,7 +253,7 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
                       className={`p-4 rounded-2xl bg-surface-card border transition-all ${
                         task.isCompleted
                           ? "border-surface-borderSubtle opacity-60"
-                          : "border-surface-border hover:border-accent/40"
+                          : "border-surface-border hover:border-indigo/40 dark:hover:border-steelteal/40"
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -256,8 +261,8 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
                           onClick={() => toggleTaskCompletion(task.id, task.isCompleted)}
                           className={`w-5 h-5 rounded-lg border flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
                             task.isCompleted
-                              ? "bg-accent border-accent text-white"
-                              : "border-surface-border hover:border-accent"
+                              ? "bg-indigo dark:bg-steelteal border-indigo dark:border-steelteal text-white"
+                              : "border-surface-border hover:border-indigo dark:hover:border-steelteal"
                           }`}
                         >
                           {task.isCompleted && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -268,20 +273,20 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
                             className={`text-sm font-bold ${
                               task.isCompleted
                                 ? "line-through text-muted"
-                                : "text-white"
+                                : "text-foreground"
                             }`}
                           >
                             {task.title}
                           </h4>
 
                           {task.notes && (
-                            <p className="text-xs text-muted-light mt-1 line-clamp-2">
+                            <p className="text-xs text-muted mt-1 line-clamp-2">
                               {task.notes}
                             </p>
                           )}
 
                           {task.due && (
-                            <div className="flex items-center gap-1 text-[11px] text-accent mt-1.5 font-medium">
+                            <div className="flex items-center gap-1 text-[11px] text-indigo dark:text-steelteal mt-1.5 font-medium">
                               <Clock className="w-3 h-3" />
                               <span>Due: {format(new Date(task.due), "PP")}</span>
                             </div>
@@ -294,9 +299,9 @@ export default function CalendarTasksView({ onSelectEmailById }: CalendarTasksVi
                         <div className="mt-3 pt-2.5 border-t border-surface-borderSubtle flex items-center justify-between text-xs">
                           <button
                             onClick={() => onSelectEmailById(task.email!.id)}
-                            className="text-muted hover:text-accent flex items-center gap-1.5 truncate max-w-sm transition-colors"
+                            className="text-muted hover:text-indigo dark:hover:text-steelteal flex items-center gap-1.5 truncate max-w-sm transition-colors"
                           >
-                            <Mail className="w-3 h-3 text-accent flex-shrink-0" />
+                            <Mail className="w-3 h-3 text-indigo dark:text-steelteal flex-shrink-0" />
                             <span className="truncate">{task.email.subject}</span>
                           </button>
                           <span className="text-[10px] text-muted">Source Email</span>

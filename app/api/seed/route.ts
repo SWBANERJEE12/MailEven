@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { INITIAL_MOCK_EMAILS } from "@/lib/mock-data";
+import { DEMO_ACCOUNTS, INITIAL_MOCK_EMAILS } from "@/lib/mock-data";
+import { encryptToken } from "@/lib/crypto";
+import { validateRequestOrigin, invalidOriginResponse } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
+  if (!validateRequestOrigin(req)) {
+    return invalidOriginResponse();
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,8 +28,40 @@ export async function POST(req: NextRequest) {
       await prisma.email.deleteMany({ where: { userId } });
     }
 
-    // Insert mock emails
+    // Ensure both demo connected accounts exist
+    const accountMap = new Map<string, string>();
+
+    for (const demoAcc of DEMO_ACCOUNTS) {
+      const dbAcc = await prisma.connectedAccount.upsert({
+        where: {
+          userId_email: {
+            userId,
+            email: demoAcc.email,
+          },
+        },
+        update: {
+          name: demoAcc.name,
+          color: demoAcc.color,
+          initials: demoAcc.initials,
+          isPrimary: demoAcc.isPrimary,
+        },
+        create: {
+          userId,
+          email: demoAcc.email,
+          name: demoAcc.name,
+          color: demoAcc.color,
+          initials: demoAcc.initials,
+          isPrimary: demoAcc.isPrimary,
+          accessToken: encryptToken("demo_access_" + demoAcc.id),
+          refreshToken: encryptToken("demo_refresh_" + demoAcc.id),
+        },
+      });
+      accountMap.set(demoAcc.id, dbAcc.id);
+    }
+
+    // Insert mock emails linked to their accounts
     for (const mock of INITIAL_MOCK_EMAILS) {
+      const connectedAccId = accountMap.get(mock.accountId);
       const existing = await prisma.email.findFirst({
         where: { userId, googleMessageId: mock.id },
       });
@@ -32,6 +70,8 @@ export async function POST(req: NextRequest) {
         await prisma.email.create({
           data: {
             userId,
+            connectedAccountId: connectedAccId || null,
+            accountEmail: mock.accountEmail,
             googleMessageId: mock.id,
             threadId: mock.id,
             sender: mock.sender,
@@ -57,14 +97,17 @@ export async function POST(req: NextRequest) {
     await prisma.notificationLog.create({
       data: {
         userId,
-        title: "Mock Data Seeded",
-        message: "Your inbox has been refreshed with sample executive emails, AI summaries, and actionable briefings.",
+        title: "Mock Dataset Refreshed",
+        message: "Dual accounts synced: Alex Chen (Work) and Alex Chen (Personal). Interleaved feed active.",
         summary: "Ready to explore Inbox, Daily Briefing, and One-Tap Calendar & Tasks actions.",
         isRead: false,
       },
     });
 
-    return NextResponse.json({ success: true, message: "Sample emails successfully seeded." });
+    return NextResponse.json({
+      success: true,
+      message: "Dual demo accounts and sample emails successfully seeded.",
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

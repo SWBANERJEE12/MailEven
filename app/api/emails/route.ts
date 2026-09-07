@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { validateRequestOrigin, invalidOriginResponse } from "@/lib/security";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -14,12 +15,35 @@ export async function GET(req: NextRequest) {
   const tagFilter = searchParams.get("tag");
   const searchQuery = searchParams.get("search")?.toLowerCase().trim();
   const status = searchParams.get("status") || "inbox";
+  const accountId = searchParams.get("accountId");
 
   try {
+    const whereClause: any = {
+      userId,
+      status: status === "all" ? undefined : status,
+    };
+
+    // Filter by specific connected account if provided and not "all"
+    if (accountId && accountId !== "all") {
+      whereClause.OR = [
+        { connectedAccountId: accountId },
+        { accountEmail: accountId },
+      ];
+    }
+
     const emails = await prisma.email.findMany({
-      where: {
-        userId,
-        status: status === "all" ? undefined : status,
+      where: whereClause,
+      include: {
+        connectedAccount: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            initials: true,
+            color: true,
+            isPrimary: true,
+          },
+        },
       },
       orderBy: {
         receivedAt: "desc",
@@ -44,7 +68,8 @@ export async function GET(req: NextRequest) {
           e.sender.toLowerCase().includes(searchQuery) ||
           (e.senderName && e.senderName.toLowerCase().includes(searchQuery)) ||
           e.summary.toLowerCase().includes(searchQuery) ||
-          (e.snippet && e.snippet.toLowerCase().includes(searchQuery))
+          (e.snippet && e.snippet.toLowerCase().includes(searchQuery)) ||
+          (e.accountEmail && e.accountEmail.toLowerCase().includes(searchQuery))
       );
     }
 
@@ -56,14 +81,28 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!validateRequestOrigin(req)) {
+    return invalidOriginResponse();
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const userId = (session.user as any).id;
+
   try {
     const body = await req.json();
     const { emailId, status, isRead, briefingStatus } = body;
+
+    const email = await prisma.email.findFirst({
+      where: { id: emailId, userId },
+    });
+
+    if (!email) {
+      return NextResponse.json({ error: "Email not found" }, { status: 404 });
+    }
 
     const updated = await prisma.email.update({
       where: { id: emailId },

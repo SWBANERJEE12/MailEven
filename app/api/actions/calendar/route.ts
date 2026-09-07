@@ -3,44 +3,94 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createGoogleCalendarEvent } from "@/lib/google";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { validateRequestOrigin, invalidOriginResponse } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
+  if (!validateRequestOrigin(req)) {
+    return invalidOriginResponse();
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const userId = (session.user as any).id;
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  // Rate limit: 20 confirm actions per 60s
+  const rateLimit = checkRateLimit(`action:${userId}`, 20, 60000);
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      {
+        error: "Action rate limit reached. Please wait a few seconds before creating another calendar event.",
+        resetInSeconds: rateLimit.resetInSeconds,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rateLimit.resetInSeconds) },
+      }
+    );
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { connectedAccounts: true },
+  });
 
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   try {
-    const { emailId, title, startTime, endTime, location, description } = await req.json();
+    const { emailId, title, startTime, endTime, location, description, calendarId } = await req.json();
 
     if (!title || !startTime || !endTime) {
       return NextResponse.json({ error: "Title, start time, and end time are required" }, { status: 400 });
     }
 
+    // Find associated email to determine connected account
+    let connectedAccountId: string | null = null;
+    if (emailId) {
+      const emailRecord = await prisma.email.findFirst({
+        where: { id: emailId, userId },
+      });
+      if (emailRecord?.connectedAccountId) {
+        connectedAccountId = emailRecord.connectedAccountId;
+      }
+    }
+
+    // Locate target account tokens
+    const targetAccount = connectedAccountId
+      ? user.connectedAccounts.find((a) => a.id === connectedAccountId)
+      : user.connectedAccounts.find((a) => a.isPrimary) || user.connectedAccounts[0];
+
     let googleEventId: string | undefined;
     let htmlLink: string | undefined;
 
     // Call Google Calendar API if live access token is available
-    if (user.accessToken && !user.isDemo) {
+    if (
+      targetAccount?.accessToken &&
+      !targetAccount.accessToken.startsWith("demo_") &&
+      !user.isDemo
+    ) {
       try {
-        const calResult = await createGoogleCalendarEvent(user.accessToken, user.refreshToken || undefined, {
-          title,
-          description,
-          location,
-          startTime: new Date(startTime).toISOString(),
-          endTime: new Date(endTime).toISOString(),
-        });
+        const calResult = await createGoogleCalendarEvent(
+          targetAccount.accessToken,
+          targetAccount.refreshToken || undefined,
+          {
+            title,
+            description,
+            location,
+            startTime: new Date(startTime).toISOString(),
+            endTime: new Date(endTime).toISOString(),
+            calendarId: calendarId || "primary",
+          }
+        );
         googleEventId = calResult.googleEventId || undefined;
         htmlLink = calResult.htmlLink || undefined;
       } catch (calErr: any) {
-        console.warn("Google Calendar API error (falling back to local DB):", calErr.message);
+        console.warn("Google Calendar API error (falling back to web link):", calErr.message);
       }
     }
 
@@ -59,8 +109,10 @@ export async function POST(req: NextRequest) {
     const calendarEvent = await prisma.calendarEvent.create({
       data: {
         userId,
+        connectedAccountId: targetAccount?.id || null,
         emailId: emailId || null,
         googleEventId,
+        calendarId: calendarId || "primary",
         title,
         description,
         location,
@@ -81,7 +133,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       event: calendarEvent,
-      message: "Event successfully scheduled on Google Calendar!",
+      message: `Event successfully scheduled on ${calendarId ? `"${calendarId}"` : "Google Calendar"}!`,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -17,17 +17,43 @@ model User {
   accessToken   String?
   refreshToken  String?
   tokenExpiry   DateTime?
+  retentionDays Int       @default(30)
   isDemo        Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   accounts          Account[]
   sessions          Session[]
+  connectedAccounts ConnectedAccount[]
   emails            Email[]
   calendarEvents    CalendarEvent[]
   tasks             TaskItem[]
   notifications     NotificationLog[]
   pushSubscriptions PushSubscription[]
+}
+
+model ConnectedAccount {
+  id           String    @id @default(cuid())
+  userId       String
+  email        String
+  name         String?
+  avatar       String?
+  color        String?   // Accent color for indicator dot
+  initials     String?   // Short 2-letter badge e.g. "AC", "AP"
+  accessToken  String?   // AES-256-GCM encrypted
+  refreshToken String?   // AES-256-GCM encrypted
+  expiresAt    DateTime?
+  isPrimary    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emails         Email[]
+  calendarEvents CalendarEvent[]
+  tasks          TaskItem[]
+
+  @@unique([userId, email])
+  @@index([userId])
 }
 
 model Account {
@@ -66,83 +92,95 @@ model VerificationToken {
 }
 
 model Email {
-  id              String   @id @default(cuid())
-  userId          String
-  googleMessageId String?
-  threadId        String?
-  sender          String
-  senderName      String?
-  recipient       String
-  subject         String
-  snippet         String?
-  bodyText        String?
-  bodyHtml        String?
-  receivedAt      DateTime @default(now())
-  summary         String
-  isActionable    Boolean  @default(false)
-  actionType      String   @default("none") // "event", "task", "none"
-  eventProposal   String?  // JSON string: { title, startTime, endTime, location, description }
-  taskProposal    String?  // JSON string: { title, dueDate, notes, priority }
-  status          String   @default("inbox") // "inbox", "archived", "trash"
-  briefingStatus  String   @default("pending") // "pending", "interested", "dismissed", "actioned"
-  isRead          Boolean  @default(false)
-  isMock          Boolean  @default(false)
-  tags            String   @default("[]") // JSON string array e.g. ["Work", "Urgent"]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  userId             String
+  connectedAccountId String?
+  accountEmail       String?
+  googleMessageId    String?
+  threadId           String?
+  sender             String
+  senderName         String?
+  recipient          String
+  subject            String
+  snippet            String?
+  bodyText           String?
+  bodyHtml           String?
+  receivedAt         DateTime  @default(now())
+  summary            String
+  isActionable       Boolean   @default(false)
+  actionType         String    @default("none") // "event", "task", "none"
+  eventProposal      String?   // JSON string: { title, startTime, endTime, location, description }
+  taskProposal       String?   // JSON string: { title, dueDate, notes, priority }
+  status             String    @default("inbox") // "inbox", "archived", "trash"
+  briefingStatus     String    @default("pending") // "pending", "interested", "dismissed", "actioned"
+  isRead             Boolean   @default(false)
+  isMock             Boolean   @default(false)
+  tags               String    @default("[]") // JSON string array e.g. ["Work", "Urgent"]
+  bodyPurgedAt       DateTime? // Timestamp if raw body was auto-purged
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  calendarEvents CalendarEvent[]
-  tasks          TaskItem[]
-  notifications  NotificationLog[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectedAccount ConnectedAccount? @relation(fields: [connectedAccountId], references: [id], onDelete: SetNull)
+  calendarEvents   CalendarEvent[]
+  tasks            TaskItem[]
+  notifications    NotificationLog[]
 
   @@index([userId, status])
   @@index([userId, briefingStatus])
+  @@index([connectedAccountId])
 }
 
 model CalendarEvent {
-  id            String   @id @default(cuid())
-  userId        String
-  emailId       String?
-  googleEventId String?
-  title         String
-  description   String?
-  location      String?
-  startTime     DateTime
-  endTime       DateTime
-  htmlLink      String?
-  createdAt     DateTime @default(now())
+  id                 String   @id @default(cuid())
+  userId             String
+  connectedAccountId String?
+  emailId            String?
+  googleEventId      String?
+  calendarId         String?  @default("primary")
+  title              String
+  description        String?
+  location           String?
+  startTime          DateTime
+  endTime            DateTime
+  htmlLink           String?
+  createdAt          DateTime @default(now())
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  email Email? @relation(fields: [emailId], references: [id], onDelete: SetNull)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectedAccount ConnectedAccount? @relation(fields: [connectedAccountId], references: [id], onDelete: SetNull)
+  email            Email?            @relation(fields: [emailId], references: [id], onDelete: SetNull)
 }
 
 model TaskItem {
-  id           String    @id @default(cuid())
-  userId       String
-  emailId      String?
-  googleTaskId String?
-  title        String
-  notes        String?
-  due          DateTime?
-  status       String    @default("needsAction")
-  isCompleted  Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                 String    @id @default(cuid())
+  userId             String
+  connectedAccountId String?
+  emailId            String?
+  googleTaskId       String?
+  taskListId         String?   @default("@default")
+  title              String
+  notes              String?
+  due                DateTime?
+  status             String    @default("needsAction")
+  isCompleted        Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  email Email? @relation(fields: [emailId], references: [id], onDelete: SetNull)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectedAccount ConnectedAccount? @relation(fields: [connectedAccountId], references: [id], onDelete: SetNull)
+  email            Email?            @relation(fields: [emailId], references: [id], onDelete: SetNull)
 }
 
 model NotificationLog {
-  id        String   @id @default(cuid())
-  userId    String
-  emailId   String?
-  title     String
-  message   String
-  summary   String?
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id                 String   @id @default(cuid())
+  userId             String
+  connectedAccountId String?
+  emailId            String?
+  title              String
+  message            String
+  summary            String?
+  isRead             Boolean  @default(false)
+  createdAt          DateTime @default(now())
 
   user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   email Email? @relation(fields: [emailId], references: [id], onDelete: Cascade)
