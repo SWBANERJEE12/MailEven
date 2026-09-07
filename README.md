@@ -2,7 +2,7 @@
 
 MailEven is an AI email client that summarizes Gmail messages, delivers notification briefings, and turns emails into Google Calendar events or Google Tasks with one tap.
 
-Built with **Next.js (App Router, TypeScript)**, **Tailwind CSS**, **Auth.js (NextAuth) Google Provider**, **googleapis**, **Gemini API (`@google/genai`)**, **SQLite + Prisma**, and **Web Push API / In-App Bell notifications**.
+Built with **Next.js (App Router, TypeScript)**, **Tailwind CSS**, **Auth.js (NextAuth) Google Provider**, **googleapis**, **Groq API (`groq-sdk`) with GPT-OSS 20B**, **SQLite + Prisma**, and **Web Push API / In-App Bell notifications**.
 
 ---
 
@@ -65,7 +65,7 @@ In the Google Cloud Console, navigate to **APIs & Services > Library** and enabl
 5. Click **Create** and copy your **Client ID** and **Client Secret**.
 
 ### 5. Update `.env.local`
-Edit `C:\Users\swapb\.gemini\antigravity\scratch\maileven\.env.local`:
+Create or edit `.env.local` in the project root:
 ```env
 DATABASE_URL="file:./dev.db"
 NEXTAUTH_URL="http://localhost:3000"
@@ -75,9 +75,18 @@ NEXTAUTH_SECRET="your-generated-secret-key"
 GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="your-client-secret"
 
-# Gemini API Key (from https://aistudio.google.com)
-GEMINI_API_KEY="your-gemini-api-key"
+# Groq API Key (from https://console.groq.com/keys)
+GROQ_API_KEY="your-groq-api-key"
 ```
+
+## Deploying to Vercel
+
+1. Push the project to GitHub and import the repository in [Vercel](https://vercel.com/new). The existing `npm run build` command is detected automatically.
+2. Add these environment variables for **Production**, **Preview**, and **Development** as appropriate: `GROQ_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, and `DATABASE_URL`.
+3. Set `NEXTAUTH_URL` to your production origin, for example `https://your-app.vercel.app`, then add `https://your-app.vercel.app/api/auth/callback/google` as an authorized redirect URI in Google Cloud.
+4. Before production deployment, move Prisma from SQLite to a hosted database such as Vercel Postgres, Neon, or Supabase. SQLite files are not durable on Vercel's serverless filesystem, so `DATABASE_URL="file:./dev.db"` is suitable only for local development.
+
+`GROQ_API_KEY` is server-only: do not prefix it with `NEXT_PUBLIC_` and never commit it to the repository.
 
 ---
 

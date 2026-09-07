@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { fetchRecentGmailMessages } from "@/lib/google";
-import { analyzeEmailWithGemini } from "@/lib/gemini";
+import { analyzeEmailWithGroq } from "@/lib/gemini";
 import { sendNotificationToUser } from "@/lib/notifications";
 
 const SIMULATED_INCOMING_TEMPLATES = [
@@ -101,8 +101,8 @@ export async function POST(req: NextRequest) {
 
         if (existing) continue;
 
-        // Run Gemini AI Analysis
-        const analysis = await analyzeEmailWithGemini(
+        // Run Groq AI Analysis
+        const analysis = await analyzeEmailWithGroq(
           msg.subject,
           `${msg.senderName} <${msg.sender}>`,
           msg.bodyText,
@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
   const now = new Date();
   const simulatedId = `sim_${Date.now()}`;
 
-  const analysis = await analyzeEmailWithGemini(
+  const analysis = await analyzeEmailWithGroq(
     randomTemplate.subject,
     `${randomTemplate.senderName} <${randomTemplate.sender}>`,
     randomTemplate.bodyText,

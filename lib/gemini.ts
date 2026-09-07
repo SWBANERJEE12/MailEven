@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { createGroqClient } from "@/lib/groq";
 
 export interface AIAnalysisResult {
   summary: string;
@@ -20,18 +20,18 @@ export interface AIAnalysisResult {
   } | null;
 }
 
-export async function analyzeEmailWithGemini(
+export async function analyzeEmailWithGroq(
   subject: string,
   sender: string,
   body: string,
   receivedAt: Date = new Date()
 ): Promise<AIAnalysisResult> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  const apiKey = process.env.GROQ_API_KEY?.trim();
 
-  // If Gemini API Key is configured, attempt real Gemini 2.5 Flash inference
+  // Keep the client server-only: this module is imported exclusively by API routes.
   if (apiKey) {
     try {
-      const ai = new GoogleGenAI({ apiKey });
+      const groq = createGroqClient(apiKey);
       const prompt = `You are the AI core for MailEven, an executive email assistant.
 Analyze this email and extract structured actions, tags, and a crisp summary.
 
@@ -73,12 +73,21 @@ Return ONLY valid JSON matching this exact structure without markdown backticks:
   "taskProposal": null | { "title": "...", "dueDate": "...", "notes": "...", "priority": "medium" }
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
+      const response = await groq.chat.completions.create({
+        model: "openai/gpt-oss-20b",
+        temperature: 0.1,
+        max_completion_tokens: 1200,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: "Return only a valid JSON object. Do not use markdown or add commentary.",
+          },
+          { role: "user", content: prompt },
+        ],
       });
 
-      const responseText = response.text?.trim() || "";
+      const responseText = response.choices[0]?.message?.content?.trim() || "";
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]) as AIAnalysisResult;
@@ -92,13 +101,16 @@ Return ONLY valid JSON matching this exact structure without markdown backticks:
         };
       }
     } catch (err) {
-      console.warn("Gemini API call failed, falling back to heuristic engine:", err);
+      console.warn("Groq API call failed, falling back to heuristic engine:", err);
     }
   }
 
   // Fallback heuristic extraction
   return heuristicEmailAnalysis(subject, sender, body, receivedAt);
 }
+
+// Temporary compatibility export for any external callers still using the old name.
+export const analyzeEmailWithGemini = analyzeEmailWithGroq;
 
 function generateFallbackSummary(subject: string, body: string): string {
   const cleanBody = body

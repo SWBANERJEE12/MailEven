@@ -78,7 +78,7 @@ export default function SettingsView({ onRefreshData }: SettingsViewProps) {
           <span>Settings & Diagnostics</span>
         </h2>
         <p className="text-xs text-muted-light mt-0.5">
-          Configure Google APIs, Gemini intelligence, and notification preferences.
+          Configure Google APIs, Groq intelligence, and notification preferences.
         </p>
       </div>
 
@@ -141,21 +141,21 @@ export default function SettingsView({ onRefreshData }: SettingsViewProps) {
         </div>
       </div>
 
-      {/* Gemini AI Status */}
+      {/* Groq AI Status */}
       <div className="p-6 rounded-3xl bg-surface-card border border-surface-border space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-surface-elevated border border-surface-border flex items-center justify-center text-accent">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">Gemini AI Engine</h3>
+            <h3 className="text-sm font-bold text-white">Groq AI Engine</h3>
             <p className="text-xs text-muted">
-              Model: gemini-2.5-flash via @google/genai SDK
+              Model: openai/gpt-oss-20b via Groq
             </p>
           </div>
         </div>
         <p className="text-xs text-muted-light leading-relaxed">
-          Emails are summarized into 1-2 executive sentences, assigned contextual tags, and evaluated for calendar blocks or action items. If GEMINI_API_KEY is not supplied in .env.local, MailEven automatically falls back to an intelligent heuristic NLP engine.
+          Emails are summarized into 1-2 executive sentences, assigned contextual tags, and evaluated for calendar blocks or action items. If GROQ_API_KEY is not supplied, MailEven automatically falls back to an intelligent heuristic NLP engine.
         </p>
       </div>
 

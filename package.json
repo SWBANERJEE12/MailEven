@@ -14,13 +14,13 @@
     "@prisma/client": "^5.22.0",
     "date-fns": "^4.1.0",
     "googleapis": "^144.0.0",
-    "groq-sdk": "...",
+    "groq-sdk": "^0.37.0",
     "lucide-react": "^0.468.0",
     "next": "14.2.23",
     "next-auth": "^4.24.11",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "web-push": "^3.6.7"    
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/node": "^20.17.0",
