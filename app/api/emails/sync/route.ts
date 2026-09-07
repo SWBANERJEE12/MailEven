@@ -141,7 +141,9 @@ export async function POST(req: NextRequest) {
   if (liveAccounts.length > 0) {
     for (const acc of liveAccounts) {
       try {
-        const messages = await fetchRecentGmailMessages(acc.accessToken!, acc.refreshToken || undefined, 6);
+        // A regular sync brings in a substantial working set without attempting an
+        // unbounded historical import in a single serverless request.
+        const messages = await fetchRecentGmailMessages(acc.accessToken!, acc.refreshToken || undefined, 50);
 
         for (const msg of messages) {
           const existing = await prisma.email.findFirst({

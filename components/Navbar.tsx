@@ -130,7 +130,7 @@ export default function Navbar({
             onClick={onSync}
             disabled={isSyncing}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-elevated hover:bg-surface-highlight border border-surface-borderSubtle rounded-xl text-xs font-semibold text-foreground transition-colors disabled:opacity-50"
-            title="Sync latest emails across connected accounts"
+            title="Sync the latest 50 Inbox emails from each connected account"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 text-accent ${isSyncing ? "animate-spin" : ""}`}
