@@ -1,0 +1,160 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  googleId      String?
+  accessToken   String?
+  refreshToken  String?
+  tokenExpiry   DateTime?
+  isDemo        Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts          Account[]
+  sessions          Session[]
+  emails            Email[]
+  calendarEvents    CalendarEvent[]
+  tasks             TaskItem[]
+  notifications     NotificationLog[]
+  pushSubscriptions PushSubscription[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Email {
+  id              String   @id @default(cuid())
+  userId          String
+  googleMessageId String?
+  threadId        String?
+  sender          String
+  senderName      String?
+  recipient       String
+  subject         String
+  snippet         String?
+  bodyText        String?
+  bodyHtml        String?
+  receivedAt      DateTime @default(now())
+  summary         String
+  isActionable    Boolean  @default(false)
+  actionType      String   @default("none") // "event", "task", "none"
+  eventProposal   String?  // JSON string: { title, startTime, endTime, location, description }
+  taskProposal    String?  // JSON string: { title, dueDate, notes, priority }
+  status          String   @default("inbox") // "inbox", "archived", "trash"
+  briefingStatus  String   @default("pending") // "pending", "interested", "dismissed", "actioned"
+  isRead          Boolean  @default(false)
+  isMock          Boolean  @default(false)
+  tags            String   @default("[]") // JSON string array e.g. ["Work", "Urgent"]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  calendarEvents CalendarEvent[]
+  tasks          TaskItem[]
+  notifications  NotificationLog[]
+
+  @@index([userId, status])
+  @@index([userId, briefingStatus])
+}
+
+model CalendarEvent {
+  id            String   @id @default(cuid())
+  userId        String
+  emailId       String?
+  googleEventId String?
+  title         String
+  description   String?
+  location      String?
+  startTime     DateTime
+  endTime       DateTime
+  htmlLink      String?
+  createdAt     DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email Email? @relation(fields: [emailId], references: [id], onDelete: SetNull)
+}
+
+model TaskItem {
+  id           String    @id @default(cuid())
+  userId       String
+  emailId      String?
+  googleTaskId String?
+  title        String
+  notes        String?
+  due          DateTime?
+  status       String    @default("needsAction")
+  isCompleted  Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email Email? @relation(fields: [emailId], references: [id], onDelete: SetNull)
+}
+
+model NotificationLog {
+  id        String   @id @default(cuid())
+  userId    String
+  emailId   String?
+  title     String
+  message   String
+  summary   String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email Email? @relation(fields: [emailId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
